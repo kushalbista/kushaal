@@ -26,17 +26,22 @@ export const IndicatorPanel = ({ selectedPlot }: IndicatorPanelProps) => {
 
   const { indicators, exposureLevel, contextualInfo, areaName, coordinates, plotNumber } = selectedPlot;
 
-  const getPermeabilityVariant = (permeability: string) => {
+  const getPermeabilityVariant = (permeability?: string) => {
+    if (!permeability) return 'moderate';
     if (permeability === 'high') return 'low';
     if (permeability === 'medium') return 'moderate';
     return 'elevated';
   };
 
-  const getWaterTableVariant = (depth: number) => {
+  const getWaterTableVariant = (depth?: number) => {
+    if (depth === undefined) return 'moderate';
     if (depth >= 6) return 'low';
     if (depth >= 4) return 'moderate';
     return 'elevated';
   };
+
+  const soilType = indicators?.soilType;
+  const waterTable = indicators?.waterTable;
 
   return (
     <div className="h-full overflow-y-auto p-4 lg:p-6 space-y-4">
@@ -93,23 +98,27 @@ export const IndicatorPanel = ({ selectedPlot }: IndicatorPanelProps) => {
           variant={indicators.drainageProximity.distanceMeters > 200 ? 'low' : indicators.drainageProximity.distanceMeters > 100 ? 'moderate' : 'elevated'}
         />
 
-        <IndicatorCard
-          icon={<Layers className="w-5 h-5 text-amber-600" />}
-          title="Soil Type"
-          value={indicators.soilType.type}
-          subtitle={`Permeability: ${indicators.soilType.permeability}`}
-          tooltip="Soil classification and permeability rating affects water drainage capacity and foundation considerations."
-          variant={getPermeabilityVariant(indicators.soilType.permeability)}
-        />
+        {soilType && (
+          <IndicatorCard
+            icon={<Layers className="w-5 h-5 text-amber-600" />}
+            title="Soil Type"
+            value={soilType.type}
+            subtitle={`Permeability: ${soilType.permeability}`}
+            tooltip="Soil classification and permeability rating affects water drainage capacity and foundation considerations."
+            variant={getPermeabilityVariant(soilType.permeability)}
+          />
+        )}
 
-        <IndicatorCard
-          icon={<Waves className="w-5 h-5 text-blue-500" />}
-          title="Water Table"
-          value={`${indicators.waterTable.depthMeters}m depth`}
-          subtitle={`Seasonal variation: ${indicators.waterTable.seasonalVariation}`}
-          tooltip="Depth to groundwater table and its seasonal fluctuation. Shallow water tables may indicate drainage challenges."
-          variant={getWaterTableVariant(indicators.waterTable.depthMeters)}
-        />
+        {waterTable && (
+          <IndicatorCard
+            icon={<Waves className="w-5 h-5 text-blue-500" />}
+            title="Water Table"
+            value={`${waterTable.depthMeters}m depth`}
+            subtitle={`Seasonal variation: ${waterTable.seasonalVariation}`}
+            tooltip="Depth to groundwater table and its seasonal fluctuation. Shallow water tables may indicate drainage challenges."
+            variant={getWaterTableVariant(waterTable.depthMeters)}
+          />
+        )}
       </div>
 
       {/* Context Section */}
