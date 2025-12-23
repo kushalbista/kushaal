@@ -1,4 +1,4 @@
-import { Droplets, Mountain, GitBranch, MapPin } from 'lucide-react';
+import { Droplets, Mountain, GitBranch, MapPin, Layers, Waves } from 'lucide-react';
 import { PlotData } from '@/data/mockData';
 import { ExposureBand } from './ExposureBand';
 import { IndicatorCard } from './IndicatorCard';
@@ -18,20 +18,37 @@ export const IndicatorPanel = ({ selectedPlot }: IndicatorPanelProps) => {
         </div>
         <h3 className="text-lg font-semibold text-foreground mb-2">Select a Plot</h3>
         <p className="text-sm text-muted-foreground max-w-xs">
-          Click on any cell in the heatmap to view historical exposure indicators for that location.
+          Click on any cell in the Gongabu heatmap to view historical exposure indicators for that location.
         </p>
       </div>
     );
   }
 
-  const { indicators, exposureLevel, contextualInfo, areaName, coordinates } = selectedPlot;
+  const { indicators, exposureLevel, contextualInfo, areaName, coordinates, plotNumber } = selectedPlot;
+
+  const getPermeabilityVariant = (permeability: string) => {
+    if (permeability === 'high') return 'low';
+    if (permeability === 'medium') return 'moderate';
+    return 'elevated';
+  };
+
+  const getWaterTableVariant = (depth: number) => {
+    if (depth >= 6) return 'low';
+    if (depth >= 4) return 'moderate';
+    return 'elevated';
+  };
 
   return (
     <div className="h-full overflow-y-auto p-4 lg:p-6 space-y-4">
       {/* Header */}
       <div className="pb-4 border-b border-border">
-        <h2 className="text-lg font-semibold text-foreground">Exposure Overview</h2>
-        <p className="text-sm text-muted-foreground">Historical Indicators</p>
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-foreground">Exposure Analysis</h2>
+          <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
+            {plotNumber}
+          </span>
+        </div>
+        <p className="text-sm text-muted-foreground">Historical Indicators - Gongabu</p>
         <div className="flex items-center gap-2 mt-2">
           <span className="text-xs px-2 py-1 rounded-md bg-secondary text-secondary-foreground">
             {areaName}
@@ -75,6 +92,24 @@ export const IndicatorPanel = ({ selectedPlot }: IndicatorPanelProps) => {
           tooltip="Distance from the plot center to the nearest drainage feature (canal, drain, or water channel)."
           variant={indicators.drainageProximity.distanceMeters > 200 ? 'low' : indicators.drainageProximity.distanceMeters > 100 ? 'moderate' : 'elevated'}
         />
+
+        <IndicatorCard
+          icon={<Layers className="w-5 h-5 text-amber-600" />}
+          title="Soil Type"
+          value={indicators.soilType.type}
+          subtitle={`Permeability: ${indicators.soilType.permeability}`}
+          tooltip="Soil classification and permeability rating affects water drainage capacity and foundation considerations."
+          variant={getPermeabilityVariant(indicators.soilType.permeability)}
+        />
+
+        <IndicatorCard
+          icon={<Waves className="w-5 h-5 text-blue-500" />}
+          title="Water Table"
+          value={`${indicators.waterTable.depthMeters}m depth`}
+          subtitle={`Seasonal variation: ${indicators.waterTable.seasonalVariation}`}
+          tooltip="Depth to groundwater table and its seasonal fluctuation. Shallow water tables may indicate drainage challenges."
+          variant={getWaterTableVariant(indicators.waterTable.depthMeters)}
+        />
       </div>
 
       {/* Context Section */}
@@ -82,7 +117,7 @@ export const IndicatorPanel = ({ selectedPlot }: IndicatorPanelProps) => {
 
       {/* Actions */}
       <div className="pt-4 border-t border-border">
-        <ActionButtons />
+        <ActionButtons plotNumber={plotNumber} />
       </div>
     </div>
   );
