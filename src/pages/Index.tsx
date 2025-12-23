@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { TopBar } from '@/components/TopBar';
 import { HeatmapGrid } from '@/components/HeatmapGrid';
-import { LayerControls } from '@/components/LayerControls';
 import { IndicatorPanel } from '@/components/IndicatorPanel';
 import { Footer } from '@/components/Footer';
 import { generateHeatmapGrid, PlotData, SearchResult } from '@/data/mockData';
@@ -28,7 +27,7 @@ const Index = () => {
 
     setSelectedPlot(nearestPlot);
     toast.success(`Navigated to ${result.name}`, {
-      description: 'Plot selected. View indicators on the right panel.',
+      description: 'Plot selected. View analysis on the right panel.',
     });
   };
 
@@ -43,7 +42,6 @@ const Index = () => {
       <main className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         {/* Map Panel */}
         <div className="flex-1 lg:w-[60%] relative bg-muted/30">
-          <LayerControls />
           <HeatmapGrid 
             grid={grid} 
             selectedPlot={selectedPlot} 

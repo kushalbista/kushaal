@@ -49,9 +49,15 @@
     --terracotta: 15 50% 55%;
     --terracotta-soft: 15 40% 85%;
 
-    --heatmap-low: 200 60% 70%;
-    --heatmap-medium: 40 75% 60%;
-    --heatmap-elevated: 25 55% 55%;
+    /* Risk colors - clear distinction */
+    --risk-low: 210 80% 55%;
+    --risk-moderate: 45 95% 55%;
+    --risk-elevated: 0 75% 55%;
+
+    /* Legacy heatmap tokens */
+    --heatmap-low: 210 80% 55%;
+    --heatmap-medium: 45 95% 55%;
+    --heatmap-elevated: 0 75% 55%;
 
     --glass-bg: 0 0% 100% / 0.8;
     --glass-border: 0 0% 100% / 0.3;
