@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { PlotData } from '@/data/mockData';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import gongabuSatellite from '@/assets/gongabu-satellite.jpg';
 
 interface HeatmapGridProps {
   grid: PlotData[][];
@@ -13,80 +14,125 @@ export const HeatmapGrid = ({ grid, selectedPlot, onSelectPlot }: HeatmapGridPro
   const [hoveredPlot, setHoveredPlot] = useState<PlotData | null>(null);
 
   const getHeatmapColor = (intensity: number): string => {
-    // Gradient from soft blue -> amber -> terracotta (no red)
     if (intensity < 35) {
-      return 'bg-heatmap-low/70 hover:bg-heatmap-low';
+      return 'bg-heatmap-low/60 hover:bg-heatmap-low/80 border-heatmap-low/40';
     } else if (intensity < 65) {
-      return 'bg-heatmap-medium/70 hover:bg-heatmap-medium';
+      return 'bg-heatmap-medium/60 hover:bg-heatmap-medium/80 border-heatmap-medium/40';
     } else {
-      return 'bg-heatmap-elevated/70 hover:bg-heatmap-elevated';
+      return 'bg-heatmap-elevated/60 hover:bg-heatmap-elevated/80 border-heatmap-elevated/40';
     }
   };
 
+  const rows = grid.length;
+  const cols = grid[0]?.length || 10;
+
   return (
-    <div className="relative w-full h-full flex items-center justify-center p-4">
-      {/* Simulated satellite background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-earth-300/30 via-earth-200/20 to-earth-100/30" />
-      <div className="absolute inset-0 opacity-20" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-      }} />
+    <div className="relative w-full h-full overflow-hidden">
+      {/* Satellite image background */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${gongabuSatellite})` }}
+      />
+      
+      {/* Dark overlay for better visibility */}
+      <div className="absolute inset-0 bg-background/20" />
 
-      {/* Grid overlay */}
-      <div className="relative z-10 grid gap-1" style={{ 
-        gridTemplateColumns: `repeat(${grid[0]?.length || 10}, 1fr)`,
-        aspectRatio: '1',
-        width: 'min(100%, 600px)',
-        height: 'min(100%, 600px)',
-      }}>
-        {grid.flat().map((plot) => (
-          <Tooltip key={plot.id}>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => onSelectPlot(plot)}
-                onMouseEnter={() => setHoveredPlot(plot)}
-                onMouseLeave={() => setHoveredPlot(null)}
-                className={cn(
-                  "aspect-square rounded-sm transition-all duration-200 cursor-pointer",
-                  getHeatmapColor(plot.exposureIntensity),
-                  selectedPlot?.id === plot.id && "ring-2 ring-foreground ring-offset-2 ring-offset-background scale-105 z-20",
-                  hoveredPlot?.id === plot.id && selectedPlot?.id !== plot.id && "scale-105 z-10"
-                )}
-              />
-            </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-xs">
-              <p className="text-xs font-medium">{plot.areaName}</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Historical indicator frequency; not a risk score
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        ))}
-      </div>
-
-      {/* Legend */}
-      <div className="absolute bottom-4 left-4 glass rounded-lg p-3 shadow-card">
-        <p className="text-xs font-medium text-foreground mb-2">Exposure Frequency</p>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            <div className="w-4 h-4 rounded-sm bg-heatmap-low" />
-            <span className="text-xs text-muted-foreground">Low</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-4 h-4 rounded-sm bg-heatmap-medium" />
-            <span className="text-xs text-muted-foreground">Moderate</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-4 h-4 rounded-sm bg-heatmap-elevated" />
-            <span className="text-xs text-muted-foreground">Elevated</span>
+      {/* Grid overlay container */}
+      <div className="absolute inset-0 flex items-center justify-center p-4 md:p-8">
+        <div 
+          className="relative w-full h-full max-w-[700px] max-h-[560px] rounded-lg overflow-hidden shadow-2xl border border-border/30"
+          style={{ aspectRatio: `${cols}/${rows}` }}
+        >
+          {/* Grid cells */}
+          <div 
+            className="absolute inset-0 grid gap-[2px] p-1"
+            style={{ 
+              gridTemplateColumns: `repeat(${cols}, 1fr)`,
+              gridTemplateRows: `repeat(${rows}, 1fr)`,
+            }}
+          >
+            {grid.flat().map((plot) => (
+              <Tooltip key={plot.id}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => onSelectPlot(plot)}
+                    onMouseEnter={() => setHoveredPlot(plot)}
+                    onMouseLeave={() => setHoveredPlot(null)}
+                    className={cn(
+                      "w-full h-full rounded-sm transition-all duration-200 cursor-pointer border backdrop-blur-[1px]",
+                      getHeatmapColor(plot.exposureIntensity),
+                      selectedPlot?.id === plot.id && "ring-2 ring-white ring-offset-1 ring-offset-transparent scale-[1.02] z-20 shadow-lg",
+                      hoveredPlot?.id === plot.id && selectedPlot?.id !== plot.id && "scale-[1.02] z-10 brightness-110"
+                    )}
+                    aria-label={`Plot ${plot.plotNumber} - ${plot.areaName}`}
+                  >
+                    {selectedPlot?.id === plot.id && (
+                      <span className="text-[8px] md:text-[10px] font-bold text-white drop-shadow-lg">
+                        ✓
+                      </span>
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs bg-card/95 backdrop-blur-sm">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-foreground">{plot.plotNumber}</p>
+                    <p className="text-xs text-muted-foreground">{plot.areaName}</p>
+                    <p className="text-[10px] text-muted-foreground/80 mt-1">
+                      Click to view exposure analysis
+                    </p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Coordinates display */}
-      {hoveredPlot && (
+      {/* Location label */}
+      <div className="absolute top-4 right-4 glass rounded-lg px-4 py-2 shadow-card">
+        <p className="text-sm font-semibold text-foreground">Gongabu, Kathmandu</p>
+        <p className="text-xs text-muted-foreground">गोंगबु</p>
+      </div>
+
+      {/* Legend */}
+      <div className="absolute bottom-4 left-4 glass rounded-lg p-3 shadow-card">
+        <p className="text-xs font-medium text-foreground mb-2">Historical Exposure</p>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded-sm bg-heatmap-low border border-heatmap-low/60" />
+            <span className="text-xs text-muted-foreground">Low</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded-sm bg-heatmap-medium border border-heatmap-medium/60" />
+            <span className="text-xs text-muted-foreground">Moderate</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded-sm bg-heatmap-elevated border border-heatmap-elevated/60" />
+            <span className="text-xs text-muted-foreground">Elevated</span>
+          </div>
+        </div>
+        <p className="text-[10px] text-muted-foreground/70 mt-2 max-w-[200px]">
+          Based on historical data only. Not a risk assessment.
+        </p>
+      </div>
+
+      {/* Coordinates & Plot info display */}
+      {(hoveredPlot || selectedPlot) && (
         <div className="absolute top-4 left-4 glass rounded-lg px-3 py-2 shadow-card">
+          <p className="text-xs font-medium text-foreground">
+            {(hoveredPlot || selectedPlot)?.plotNumber}
+          </p>
+          <p className="text-[10px] text-muted-foreground">
+            {(hoveredPlot || selectedPlot)?.coordinates.lat.toFixed(4)}°N, {(hoveredPlot || selectedPlot)?.coordinates.lng.toFixed(4)}°E
+          </p>
+        </div>
+      )}
+
+      {/* Click instruction */}
+      {!selectedPlot && (
+        <div className="absolute bottom-4 right-4 glass rounded-lg px-3 py-2 shadow-card animate-pulse">
           <p className="text-xs text-muted-foreground">
-            {hoveredPlot.coordinates.lat.toFixed(4)}°N, {hoveredPlot.coordinates.lng.toFixed(4)}°E
+            👆 Click any plot to view analysis
           </p>
         </div>
       )}

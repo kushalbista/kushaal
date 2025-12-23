@@ -2,16 +2,20 @@ import { FileText, Clock, PenLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
-export const ActionButtons = () => {
+interface ActionButtonsProps {
+  plotNumber?: string;
+}
+
+export const ActionButtons = ({ plotNumber }: ActionButtonsProps) => {
   const handleDownload = () => {
     toast.success('Preparing Due Diligence PDF...', {
-      description: 'Your report will be ready shortly.',
+      description: `Report for ${plotNumber || 'selected plot'} will be ready shortly.`,
     });
   };
 
   const handleTimeline = () => {
     toast.info('Historical Timeline', {
-      description: 'Timeline view coming soon.',
+      description: `Viewing historical data for ${plotNumber || 'selected plot'}.`,
     });
   };
 
