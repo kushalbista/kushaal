@@ -41,104 +41,97 @@ export const HeatmapGrid = ({ grid, selectedPlot, onSelectPlot }: HeatmapGridPro
   const cols = grid[0]?.length || 10;
 
   return (
-    <div className="absolute inset-0 overflow-hidden">
-      {/* Satellite image background */}
+    <div 
+      className="w-full h-full relative"
+      style={{
+        backgroundImage: `url(${gongabuSatellite})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        minHeight: '400px'
+      }}
+    >
+      {/* Subtle overlay for visibility */}
+      <div className="absolute inset-0 bg-black/10" />
+
+      {/* Grid overlay - fills the entire container */}
       <div 
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${gongabuSatellite})` }}
-      />
-      
-      {/* Subtle dark overlay for visibility */}
-      <div className="absolute inset-0 bg-background/10" />
+        className="absolute inset-0 grid p-2 sm:p-4 md:p-6"
+        style={{ 
+          gridTemplateColumns: `repeat(${cols}, 1fr)`,
+          gridTemplateRows: `repeat(${rows}, 1fr)`,
+          gap: '2px'
+        }}
+      >
+        {grid.flat().map((plot) => {
+          const isSelected = selectedPlot?.id === plot.id;
+          const isHovered = hoveredPlot?.id === plot.id;
+          const showColor = isSelected || showAreaRisk;
+          
+          const PlotButton = (
+            <button
+              onClick={() => onSelectPlot(plot)}
+              onMouseEnter={() => !isMobile && setHoveredPlot(plot)}
+              onMouseLeave={() => !isMobile && setHoveredPlot(null)}
+              onTouchStart={() => isMobile && setHoveredPlot(plot)}
+              onTouchEnd={() => isMobile && setTimeout(() => setHoveredPlot(null), 1000)}
+              className={cn(
+                "w-full h-full rounded-sm transition-all duration-200 cursor-pointer border border-white/20 touch-manipulation flex items-center justify-center",
+                showColor && getRiskColor(plot.exposureIntensity, isSelected, showAreaRisk && !isSelected),
+                isSelected && "ring-2 ring-white ring-offset-1 ring-offset-transparent scale-[1.02] z-20 shadow-lg border-white/60",
+                isHovered && !isSelected && "border-white/50 bg-white/20"
+              )}
+              aria-label={`Plot ${plot.plotNumber} - ${plot.areaName} - ${getRiskLevel(plot.exposureIntensity)} Risk`}
+            >
+              {isSelected && (
+                <span className="text-[10px] sm:text-xs font-bold text-white drop-shadow-lg">
+                  ✓
+                </span>
+              )}
+            </button>
+          );
 
-      {/* Grid overlay container - responsive sizing */}
-      <div className="absolute inset-0 flex items-center justify-center p-2 sm:p-4 md:p-8">
-        <div 
-          className="relative w-full h-full max-w-[95vw] lg:max-w-[700px] max-h-[70vh] lg:max-h-[560px] rounded-lg overflow-hidden shadow-2xl border border-border/30"
-          style={{ aspectRatio: `${cols}/${rows}` }}
-        >
-          {/* Grid cells */}
-          <div 
-            className="absolute inset-0 grid gap-[1px] p-0.5"
-            style={{ 
-              gridTemplateColumns: `repeat(${cols}, 1fr)`,
-              gridTemplateRows: `repeat(${rows}, 1fr)`,
-            }}
-          >
-            {grid.flat().map((plot) => {
-              const isSelected = selectedPlot?.id === plot.id;
-              const isHovered = hoveredPlot?.id === plot.id;
-              const showColor = isSelected || showAreaRisk;
-              
-              const PlotButton = (
-                <button
-                  onClick={() => onSelectPlot(plot)}
-                  onMouseEnter={() => !isMobile && setHoveredPlot(plot)}
-                  onMouseLeave={() => !isMobile && setHoveredPlot(null)}
-                  onTouchStart={() => isMobile && setHoveredPlot(plot)}
-                  onTouchEnd={() => isMobile && setTimeout(() => setHoveredPlot(null), 1000)}
-                  className={cn(
-                    "w-full h-full rounded-sm transition-all duration-200 cursor-pointer border border-transparent touch-manipulation",
-                    // Larger touch targets on mobile
-                    isMobile && "min-h-[28px] min-w-[28px]",
-                    showColor && getRiskColor(plot.exposureIntensity, isSelected, showAreaRisk && !isSelected),
-                    isSelected && "ring-2 ring-white ring-offset-1 ring-offset-transparent scale-[1.05] z-20 shadow-lg border-white/50",
-                    isHovered && !isSelected && "border-white/40 scale-[1.02] z-10 bg-white/10"
-                  )}
-                  aria-label={`Plot ${plot.plotNumber} - ${plot.areaName} - ${getRiskLevel(plot.exposureIntensity)} Risk`}
-                >
-                  {isSelected && (
-                    <span className="text-[8px] sm:text-[10px] md:text-xs font-bold text-white drop-shadow-lg">
-                      ✓
+          // Only show tooltips on desktop
+          if (isMobile) {
+            return <div key={plot.id} className="w-full h-full">{PlotButton}</div>;
+          }
+
+          return (
+            <Tooltip key={plot.id}>
+              <TooltipTrigger asChild>
+                {PlotButton}
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs bg-card/95 backdrop-blur-sm">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-foreground">{plot.plotNumber}</p>
+                  <p className="text-xs text-muted-foreground">{plot.areaName}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={cn(
+                      "text-[10px] px-1.5 py-0.5 rounded font-medium",
+                      getRiskLevel(plot.exposureIntensity) === 'Low' && "bg-[hsl(210,80%,55%)]/20 text-[hsl(210,80%,45%)]",
+                      getRiskLevel(plot.exposureIntensity) === 'Moderate' && "bg-[hsl(45,95%,55%)]/20 text-[hsl(45,80%,35%)]",
+                      getRiskLevel(plot.exposureIntensity) === 'Elevated' && "bg-[hsl(0,75%,55%)]/20 text-[hsl(0,75%,45%)]"
+                    )}>
+                      {getRiskLevel(plot.exposureIntensity)} Risk
                     </span>
-                  )}
-                </button>
-              );
-
-              // Only show tooltips on desktop
-              if (isMobile) {
-                return <div key={plot.id}>{PlotButton}</div>;
-              }
-
-              return (
-                <Tooltip key={plot.id}>
-                  <TooltipTrigger asChild>
-                    {PlotButton}
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs bg-card/95 backdrop-blur-sm">
-                    <div className="space-y-1">
-                      <p className="text-xs font-semibold text-foreground">{plot.plotNumber}</p>
-                      <p className="text-xs text-muted-foreground">{plot.areaName}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className={cn(
-                          "text-[10px] px-1.5 py-0.5 rounded font-medium",
-                          getRiskLevel(plot.exposureIntensity) === 'Low' && "bg-[hsl(210,80%,55%)]/20 text-[hsl(210,80%,45%)]",
-                          getRiskLevel(plot.exposureIntensity) === 'Moderate' && "bg-[hsl(45,95%,55%)]/20 text-[hsl(45,80%,35%)]",
-                          getRiskLevel(plot.exposureIntensity) === 'Elevated' && "bg-[hsl(0,75%,55%)]/20 text-[hsl(0,75%,45%)]"
-                        )}>
-                          {getRiskLevel(plot.exposureIntensity)} Risk
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground/80 mt-1">
-                        Click to view analysis
-                      </p>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
-          </div>
-        </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground/80 mt-1">
+                    Click to view analysis
+                  </p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          );
+        })}
       </div>
 
-      {/* Location label - responsive positioning */}
-      <div className="absolute top-2 right-2 sm:top-4 sm:right-4 glass rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 shadow-card">
+      {/* Location label */}
+      <div className="absolute top-2 right-2 sm:top-4 sm:right-4 glass rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 shadow-card z-30">
         <p className="text-xs sm:text-sm font-semibold text-foreground">Gongabu, Kathmandu</p>
         <p className="text-[10px] sm:text-xs text-muted-foreground">गोंगबु</p>
       </div>
 
-      {/* Area Risk Toggle - responsive */}
-      <div className="absolute top-2 left-2 sm:top-4 sm:left-4 glass rounded-lg p-2 sm:p-3 shadow-card">
+      {/* Area Risk Toggle */}
+      <div className="absolute top-2 left-2 sm:top-4 sm:left-4 glass rounded-lg p-2 sm:p-3 shadow-card z-30">
         <div className="flex items-center gap-2 sm:gap-3">
           {showAreaRisk ? (
             <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
@@ -161,7 +154,7 @@ export const HeatmapGrid = ({ grid, selectedPlot, onSelectPlot }: HeatmapGridPro
 
       {/* Legend - only visible when area risk is shown */}
       {showAreaRisk && (
-        <div className="absolute bottom-16 sm:bottom-4 left-2 sm:left-4 glass rounded-lg p-2 sm:p-3 shadow-card animate-fade-in">
+        <div className="absolute bottom-16 sm:bottom-4 left-2 sm:left-4 glass rounded-lg p-2 sm:p-3 shadow-card animate-fade-in z-30">
           <p className="text-[10px] sm:text-xs font-medium text-foreground mb-1.5 sm:mb-2">Risk Levels</p>
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="flex items-center gap-1">
@@ -182,7 +175,7 @@ export const HeatmapGrid = ({ grid, selectedPlot, onSelectPlot }: HeatmapGridPro
 
       {/* Selected plot info - mobile bottom bar */}
       {isMobile && selectedPlot && (
-        <div className="absolute bottom-0 left-0 right-0 glass-strong rounded-t-xl px-4 py-3 shadow-card flex items-center justify-between">
+        <div className="absolute bottom-0 left-0 right-0 glass-strong rounded-t-xl px-4 py-3 shadow-card flex items-center justify-between z-30">
           <div>
             <p className="text-sm font-medium text-foreground">{selectedPlot.plotNumber}</p>
             <p className="text-xs text-muted-foreground">{selectedPlot.areaName}</p>
@@ -203,7 +196,7 @@ export const HeatmapGrid = ({ grid, selectedPlot, onSelectPlot }: HeatmapGridPro
 
       {/* Coordinates display - desktop only */}
       {!isMobile && (hoveredPlot || selectedPlot) && (
-        <div className="absolute bottom-4 right-4 glass rounded-lg px-3 py-2 shadow-card">
+        <div className="absolute bottom-4 right-4 glass rounded-lg px-3 py-2 shadow-card z-30">
           <p className="text-xs font-medium text-foreground">
             {(hoveredPlot || selectedPlot)?.plotNumber}
           </p>
@@ -213,10 +206,10 @@ export const HeatmapGrid = ({ grid, selectedPlot, onSelectPlot }: HeatmapGridPro
         </div>
       )}
 
-      {/* Click instruction - responsive */}
+      {/* Click instruction */}
       {!selectedPlot && !showAreaRisk && (
         <div className={cn(
-          "absolute glass rounded-lg px-3 py-2 shadow-card animate-pulse",
+          "absolute glass rounded-lg px-3 py-2 shadow-card animate-pulse z-30",
           isMobile ? "bottom-4 left-1/2 -translate-x-1/2" : "bottom-4 left-4"
         )}>
           <p className="text-xs text-muted-foreground">

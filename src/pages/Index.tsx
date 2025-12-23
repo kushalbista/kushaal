@@ -54,9 +54,9 @@ const Index = () => {
     <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
       <TopBar onSearch={handleSearch} />
       
-      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
-        {/* Map Panel - Full screen on mobile */}
-        <div className="flex-1 w-full lg:w-[60%] relative">
+      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden relative min-h-0">
+        {/* Map Panel - Full screen on mobile, needs explicit height */}
+        <div className="flex-1 w-full lg:w-[60%] relative min-h-[300px] lg:min-h-0">
           <HeatmapGrid 
             grid={grid} 
             selectedPlot={selectedPlot} 
