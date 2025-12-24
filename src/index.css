@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -15,28 +15,36 @@
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 15%;
 
-    --primary: 215 50% 23%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 215 70% 50%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 35 45% 92%;
-    --secondary-foreground: 30 30% 25%;
+    --secondary: 210 20% 94%;
+    --secondary-foreground: 215 25% 25%;
 
     --muted: 210 20% 94%;
     --muted-foreground: 215 15% 45%;
 
-    --accent: 35 85% 55%;
+    --accent: 38 92% 50%;
     --accent-foreground: 30 40% 15%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
     --border: 210 20% 88%;
     --input: 210 20% 88%;
-    --ring: 215 50% 23%;
+    --ring: 215 70% 50%;
 
-    --radius: 0.75rem;
+    --radius: 0.625rem;
 
-    /* Custom Bhumi Drishti tokens */
+    /* Risk Level Colors */
+    --risk-low: 145 65% 42%;
+    --risk-low-bg: 145 65% 95%;
+    --risk-moderate: 38 92% 50%;
+    --risk-moderate-bg: 38 92% 95%;
+    --risk-elevated: 0 75% 55%;
+    --risk-elevated-bg: 0 75% 95%;
+
+    /* Earth/Terrain Colors */
     --earth-50: 35 40% 96%;
     --earth-100: 35 35% 90%;
     --earth-200: 30 30% 80%;
@@ -44,32 +52,26 @@
     --earth-400: 20 25% 50%;
     --earth-500: 18 30% 40%;
 
-    --amber-glow: 38 92% 50%;
-    --amber-soft: 40 70% 75%;
-    --terracotta: 15 50% 55%;
-    --terracotta-soft: 15 40% 85%;
-
-    /* Risk colors - clear distinction */
-    --risk-low: 210 80% 55%;
-    --risk-moderate: 45 95% 55%;
-    --risk-elevated: 0 75% 55%;
+    /* Info Colors */
+    --info: 210 80% 55%;
+    --info-bg: 210 80% 95%;
 
     /* Legacy heatmap tokens */
-    --heatmap-low: 210 80% 55%;
-    --heatmap-medium: 45 95% 55%;
+    --heatmap-low: 145 65% 42%;
+    --heatmap-medium: 38 92% 50%;
     --heatmap-elevated: 0 75% 55%;
 
-    --glass-bg: 0 0% 100% / 0.8;
+    --glass-bg: 0 0% 100% / 0.85;
     --glass-border: 0 0% 100% / 0.3;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 215 25% 15%;
+    --sidebar-primary: 215 70% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 20% 96%;
+    --sidebar-accent-foreground: 215 25% 15%;
+    --sidebar-border: 210 20% 90%;
+    --sidebar-ring: 215 70% 50%;
   }
 
   .dark {
@@ -82,8 +84,8 @@
     --popover: 215 30% 12%;
     --popover-foreground: 210 40% 96%;
 
-    --primary: 35 85% 55%;
-    --primary-foreground: 215 30% 8%;
+    --primary: 215 70% 55%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 215 25% 18%;
     --secondary-foreground: 210 30% 85%;
@@ -91,27 +93,32 @@
     --muted: 215 25% 18%;
     --muted-foreground: 215 20% 55%;
 
-    --accent: 35 85% 55%;
+    --accent: 38 85% 55%;
     --accent-foreground: 215 30% 8%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62% 35%;
+    --destructive-foreground: 0 0% 100%;
 
     --border: 215 25% 20%;
     --input: 215 25% 20%;
-    --ring: 35 85% 55%;
+    --ring: 215 70% 55%;
+
+    --risk-low-bg: 145 65% 15%;
+    --risk-moderate-bg: 38 70% 15%;
+    --risk-elevated-bg: 0 65% 15%;
+    --info-bg: 210 70% 15%;
 
     --glass-bg: 215 30% 12% / 0.9;
     --glass-border: 0 0% 100% / 0.1;
 
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-background: 215 30% 10%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-primary: 215 70% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 215 25% 15%;
+    --sidebar-accent-foreground: 210 40% 96%;
+    --sidebar-border: 215 25% 18%;
+    --sidebar-ring: 215 70% 55%;
   }
 }
 
@@ -121,8 +128,38 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'DM Sans', sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .risk-badge-low {
+    @apply bg-[hsl(var(--risk-low-bg))] text-[hsl(var(--risk-low))] border border-[hsl(var(--risk-low))]/30;
+  }
+  
+  .risk-badge-moderate {
+    @apply bg-[hsl(var(--risk-moderate-bg))] text-[hsl(var(--risk-moderate))] border border-[hsl(var(--risk-moderate))]/30;
+  }
+  
+  .risk-badge-elevated {
+    @apply bg-[hsl(var(--risk-elevated-bg))] text-[hsl(var(--risk-elevated))] border border-[hsl(var(--risk-elevated))]/30;
+  }
+
+  .risk-card-low {
+    @apply bg-[hsl(var(--risk-low-bg))] border-2 border-[hsl(var(--risk-low))]/40;
+  }
+  
+  .risk-card-moderate {
+    @apply bg-[hsl(var(--risk-moderate-bg))] border-2 border-[hsl(var(--risk-moderate))]/40;
+  }
+  
+  .risk-card-elevated {
+    @apply bg-[hsl(var(--risk-elevated-bg))] border-2 border-[hsl(var(--risk-elevated))]/40;
   }
 }
 
@@ -152,58 +189,55 @@
   }
 
   .animate-fade-in {
-    animation: fadeIn 0.5s ease-out forwards;
+    animation: fadeIn 0.4s ease-out forwards;
   }
 
   .animate-slide-up {
-    animation: slideUp 0.4s ease-out forwards;
+    animation: slideUp 0.35s ease-out forwards;
   }
 
   .animate-scale-in {
-    animation: scaleIn 0.3s ease-out forwards;
+    animation: scaleIn 0.25s ease-out forwards;
+  }
+
+  .animate-pulse-soft {
+    animation: pulse-soft 2s ease-in-out infinite;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
   }
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 @keyframes pulse-soft {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
-.animate-pulse-soft {
-  animation: pulse-soft 2s ease-in-out infinite;
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
