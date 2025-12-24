@@ -1,8 +1,7 @@
 import { 
   MapPin, 
   Download, 
-  Clock, 
-  MessageSquarePlus,
+  Clock,
   AlertTriangle, 
   CheckCircle, 
   AlertCircle,
@@ -14,18 +13,20 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { RiskIndicatorSection } from './RiskIndicatorSection';
-import { ExposureToggle } from './ExposureToggle';
-import { useState } from 'react';
+import { DetailedSummary } from './DetailedSummary';
+import { Plot360View } from './Plot360View';
 
 interface IndicatorPanelProps {
   selectedPlot: PlotData | null;
+  selectedPlots: PlotData[];
 }
 
-export const IndicatorPanel = ({ selectedPlot }: IndicatorPanelProps) => {
+export const IndicatorPanel = ({ selectedPlot, selectedPlots }: IndicatorPanelProps) => {
   const isMobile = useIsMobile();
-  const [exposureFilter, setExposureFilter] = useState<'all' | 'low' | 'moderate' | 'elevated'>('all');
+  const isMultiSelect = selectedPlots.length > 1;
+  const displayPlot = selectedPlot || (selectedPlots.length === 1 ? selectedPlots[0] : null);
 
-  if (!selectedPlot) {
+  if (!displayPlot && selectedPlots.length === 0) {
     return (
       <div className={cn(
         "flex flex-col items-center justify-center text-center",
@@ -37,14 +38,12 @@ export const IndicatorPanel = ({ selectedPlot }: IndicatorPanelProps) => {
         <h3 className="text-lg font-semibold text-foreground mb-2">Select a Plot</h3>
         <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
           {isMobile 
-            ? 'Tap any plot on the map or draw a custom area to view risk analysis.' 
-            : 'Click on any plot in the Gongabu map or use the drawing tools to select a custom area.'}
+            ? 'Tap any plot or draw a shape to select multiple plots.' 
+            : 'Click on any plot or use the drawing tools to select a custom area.'}
         </p>
       </div>
     );
   }
-
-  const { indicators, areaName, coordinates, plotNumber, exposureIntensity } = selectedPlot;
 
   const getRiskLevel = (intensity: number): 'Low' | 'Moderate' | 'Elevated' => {
     if (intensity < 35) return 'Low';
@@ -52,7 +51,11 @@ export const IndicatorPanel = ({ selectedPlot }: IndicatorPanelProps) => {
     return 'Elevated';
   };
 
-  const riskLevel = getRiskLevel(exposureIntensity);
+  const avgIntensity = selectedPlots.length > 0 
+    ? selectedPlots.reduce((sum, p) => sum + p.exposureIntensity, 0) / selectedPlots.length
+    : displayPlot?.exposureIntensity || 0;
+
+  const riskLevel = getRiskLevel(avgIntensity);
 
   const getRiskConfig = () => {
     switch (riskLevel) {
@@ -62,23 +65,23 @@ export const IndicatorPanel = ({ selectedPlot }: IndicatorPanelProps) => {
           color: 'text-[hsl(var(--risk-low))]',
           cardClass: 'risk-card-low',
           label: 'Low Risk',
-          description: 'Minimal environmental concerns identified'
+          description: 'Minimal flood/waterlogging concerns'
         };
       case 'Moderate':
         return {
           icon: <AlertCircle className="w-5 h-5 md:w-6 md:h-6" />,
           color: 'text-[hsl(var(--risk-moderate))]',
           cardClass: 'risk-card-moderate',
-          label: 'Moderate Risk',
-          description: 'Some factors require attention'
+          label: 'Medium Risk',
+          description: 'Moderate historical flood events'
         };
       case 'Elevated':
         return {
           icon: <AlertTriangle className="w-5 h-5 md:w-6 md:h-6" />,
           color: 'text-[hsl(var(--risk-elevated))]',
           cardClass: 'risk-card-elevated',
-          label: 'Elevated Risk',
-          description: 'Significant concerns identified'
+          label: 'High Risk',
+          description: 'Significant flood/waterlogging history'
         };
     }
   };
@@ -87,19 +90,13 @@ export const IndicatorPanel = ({ selectedPlot }: IndicatorPanelProps) => {
 
   const handleDownloadReport = () => {
     toast.success('Generating Due Diligence PDF', {
-      description: `Preparing comprehensive report for ${plotNumber}...`,
+      description: `Preparing comprehensive report for ${isMultiSelect ? `${selectedPlots.length} plots` : displayPlot?.plotNumber}...`,
     });
   };
 
   const handleViewTimeline = () => {
     toast.info('Historical Timeline', {
-      description: 'Timeline view coming soon.',
-    });
-  };
-
-  const handleAddAnnotation = () => {
-    toast.info('Owner Annotation', {
-      description: 'Annotation feature coming soon.',
+      description: 'Showing flood events from 2009-2019',
     });
   };
 
@@ -114,62 +111,61 @@ export const IndicatorPanel = ({ selectedPlot }: IndicatorPanelProps) => {
           <div className="flex items-start justify-between">
             <div>
               <h2 className="text-lg md:text-xl font-bold text-foreground">
-                Exposure Analysis
+                Risk Analysis
               </h2>
               <p className="text-sm text-muted-foreground mt-0.5">
-                Plot {plotNumber}
+                {isMultiSelect 
+                  ? `${selectedPlots.length} plots selected`
+                  : `Plot ${displayPlot?.plotNumber}`}
               </p>
             </div>
-            <a 
-              href={`https://www.google.com/maps?q=${coordinates.lat},${coordinates.lng}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-primary hover:underline"
-            >
-              <ExternalLink className="w-3 h-3" />
-              View on Maps
-            </a>
+            {displayPlot && (
+              <a 
+                href={`https://www.google.com/maps?q=${displayPlot.coordinates.lat},${displayPlot.coordinates.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-primary hover:underline"
+              >
+                <ExternalLink className="w-3 h-3" />
+                View on Maps
+              </a>
+            )}
           </div>
           
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span className="px-2 py-1 bg-secondary rounded-md">{areaName}</span>
-            <span className="px-2 py-1 bg-secondary rounded-md">
-              {coordinates.lat.toFixed(4)}°N, {coordinates.lng.toFixed(4)}°E
-            </span>
-          </div>
-        </div>
-
-        {/* Exposure Context Toggle */}
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">Filter by Risk Level</p>
-          <ExposureToggle 
-            selectedLevel={exposureFilter} 
-            onLevelChange={setExposureFilter} 
-          />
-        </div>
-
-        {/* Risk Level Card */}
-        <div className={cn(
-          "rounded-xl transition-all p-4 md:p-5",
-          riskConfig.cardClass
-        )}>
-          <div className="flex items-center gap-3 md:gap-4">
-            <div className={cn("p-2.5 md:p-3 rounded-xl bg-card/50", riskConfig.color)}>
-              {riskConfig.icon}
+          {displayPlot && (
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <span className="px-2 py-1 bg-secondary rounded-md">{displayPlot.areaName}</span>
+              <span className="px-2 py-1 bg-secondary rounded-md">
+                {displayPlot.coordinates.lat.toFixed(4)}°N, {displayPlot.coordinates.lng.toFixed(4)}°E
+              </span>
             </div>
-            <div className="flex-1">
-              <h3 className={cn("text-xl md:text-2xl font-bold", riskConfig.color)}>
-                {riskConfig.label}
-              </h3>
-              <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
-                {riskConfig.description}
-              </p>
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* Risk Indicators Accordion */}
-        <RiskIndicatorSection indicators={indicators} />
+        {/* Detailed Summary with computed values */}
+        <DetailedSummary 
+          selectedPlots={selectedPlots.length > 0 ? selectedPlots : (displayPlot ? [displayPlot] : [])}
+          isMultiSelect={isMultiSelect}
+        />
+
+        {/* 360 View - Only for single plot */}
+        {displayPlot && !isMultiSelect && (
+          <Plot360View plot={displayPlot} />
+        )}
+
+        {/* Multi-select notice for 360 view */}
+        {isMultiSelect && (
+          <div className="bg-secondary/50 rounded-lg p-3 text-center">
+            <p className="text-xs text-muted-foreground">
+              360° view available for single-plot selection only.
+            </p>
+          </div>
+        )}
+
+        {/* Risk Indicators - for single plot */}
+        {displayPlot && !isMultiSelect && (
+          <RiskIndicatorSection indicators={displayPlot.indicators} />
+        )}
 
         {/* Action Buttons */}
         <div className="space-y-2 pt-2">
@@ -182,30 +178,20 @@ export const IndicatorPanel = ({ selectedPlot }: IndicatorPanelProps) => {
             Download Due Diligence PDF
           </Button>
           
-          <div className="grid grid-cols-2 gap-2">
-            <Button 
-              variant="outline"
-              onClick={handleViewTimeline}
-              className="gap-2 h-10"
-            >
-              <Clock className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Timeline</span>
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={handleAddAnnotation}
-              className="gap-2 h-10"
-            >
-              <MessageSquarePlus className="w-4 h-4" />
-              <span className="text-xs md:text-sm">Annotate</span>
-            </Button>
-          </div>
+          <Button 
+            variant="outline"
+            onClick={handleViewTimeline}
+            className="w-full gap-2 h-10"
+          >
+            <Clock className="w-4 h-4" />
+            View Historical Timeline
+          </Button>
         </div>
 
         {/* Disclaimer */}
         <div className="text-[10px] md:text-xs text-muted-foreground/70 text-center pt-3 border-t border-border">
           <p>Historical data analysis only. This is not a legal, financial, or official land assessment.</p>
-          <p className="mt-1">Data sources: Municipal records, satellite imagery, geological surveys.</p>
+          <p className="mt-1">Data sources: Municipal records (2009-2019), satellite imagery, geological surveys.</p>
         </div>
       </div>
     </div>
