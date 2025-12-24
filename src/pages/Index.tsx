@@ -42,7 +42,7 @@ const Index = () => {
 
     setSelectedPlot(nearestPlot);
     toast.success(`Navigated to ${result.name}`, {
-      description: 'Plot selected. View analysis below.',
+      description: 'Plot selected. View analysis in the panel.',
     });
   };
 
@@ -50,13 +50,19 @@ const Index = () => {
     setSelectedPlot(plot);
   };
 
+  const handleAnalyzeNew = () => {
+    setSelectedPlot(null);
+    setDrawerOpen(false);
+    toast.info('Draw a custom area on the map or click a plot to analyze.');
+  };
+
   return (
     <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
-      <TopBar onSearch={handleSearch} />
+      <TopBar onSearch={handleSearch} onAnalyzeNew={handleAnalyzeNew} />
       
       <main className="flex-1 flex flex-col lg:flex-row overflow-hidden relative min-h-0">
-        {/* Map Panel - Full screen on mobile, needs explicit height */}
-        <div className="flex-1 w-full lg:w-[60%] relative min-h-[300px] lg:min-h-0">
+        {/* Map Panel - Full screen on mobile */}
+        <div className="flex-1 w-full lg:w-[60%] xl:w-[65%] relative min-h-[50vh] lg:min-h-0">
           <HeatmapGrid 
             grid={grid} 
             selectedPlot={selectedPlot} 
@@ -65,7 +71,7 @@ const Index = () => {
         </div>
 
         {/* Desktop: Side Panel */}
-        <div className="hidden lg:block lg:w-[40%] border-l border-border bg-card/50 overflow-hidden">
+        <div className="hidden lg:flex lg:flex-col lg:w-[40%] xl:w-[35%] border-l border-border bg-card overflow-hidden">
           <IndicatorPanel selectedPlot={selectedPlot} />
         </div>
 
@@ -73,9 +79,9 @@ const Index = () => {
         {isMobile && (
           <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
             <DrawerContent className="max-h-[85dvh]">
-              <DrawerHeader className="pb-0">
-                <DrawerTitle>
-                  {selectedPlot ? `${selectedPlot.plotNumber} Analysis` : 'Select a Plot'}
+              <DrawerHeader className="pb-0 border-b border-border">
+                <DrawerTitle className="text-left">
+                  {selectedPlot ? `Plot ${selectedPlot.plotNumber} Analysis` : 'Select a Plot'}
                 </DrawerTitle>
               </DrawerHeader>
               <div className="overflow-y-auto flex-1">
@@ -86,7 +92,7 @@ const Index = () => {
         )}
       </main>
 
-      {/* Footer - hidden on mobile for more map space */}
+      {/* Footer - hidden on mobile */}
       <div className="hidden lg:block">
         <Footer />
       </div>
