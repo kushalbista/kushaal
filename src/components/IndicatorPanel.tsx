@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { RiskIndicatorSection } from './RiskIndicatorSection';
 import { DetailedSummary } from './DetailedSummary';
-import { Plot360View } from './Plot360View';
+import { Viewer360 } from '@/components/Viewer360';
 
 interface IndicatorPanelProps {
   selectedPlot: PlotData | null;
@@ -150,7 +150,7 @@ export const IndicatorPanel = ({ selectedPlot, selectedPlots }: IndicatorPanelPr
 
         {/* 360 View - Only for single plot */}
         {displayPlot && !isMultiSelect && (
-          <Plot360View plot={displayPlot} />
+          <Viewer360 plot={displayPlot} />
         )}
 
         {/* Multi-select notice for 360 view */}

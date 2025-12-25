@@ -9,7 +9,11 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { MapToolbar, DrawingTool } from './MapToolbar';
 import { DrawingCanvas } from './DrawingCanvas';
 import { Button } from '@/components/ui/button';
+import { HeatmapOpacityControl } from '@/components/UI/HeatmapOpacityControl';
+import { PolygonRiskCard } from '@/components/UI/PolygonRiskCard';
 import gongabuSatellite from '@/assets/gongabu-satellite.jpg';
+import { getRiskLevel, getRiskBadgeClass } from '@/services/riskService';
+import { HEATMAP_DEFAULTS } from '@/utils/mapStyles';
 
 interface Point {
   x: number;
@@ -33,6 +37,7 @@ export const HeatmapGrid = ({
 }: HeatmapGridProps) => {
   const [hoveredPlot, setHoveredPlot] = useState<PlotData | null>(null);
   const [showHeatmap, setShowHeatmap] = useState(true);
+  const [heatmapOpacity, setHeatmapOpacity] = useState(HEATMAP_DEFAULTS.opacity * 100);
   const [activeTool, setActiveTool] = useState<DrawingTool>('select');
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawnShape, setDrawnShape] = useState<Point[]>([]);
@@ -43,27 +48,31 @@ export const HeatmapGrid = ({
   const rows = grid.length;
   const cols = grid[0]?.length || 10;
 
-  const getRiskColor = (intensity: number, isSelected: boolean): string => {
-    if (!showHeatmap && !isSelected) return '';
+  // Get RGBA color for proper transparency blending with satellite
+  const getRiskColorRGBA = (intensity: number, isSelected: boolean): React.CSSProperties => {
+    if (!showHeatmap && !isSelected) return {};
     
-    const opacity = isSelected ? 70 : showHeatmap ? 55 : 0;
+    const opacity = isSelected ? 0.7 : showHeatmap ? heatmapOpacity / 100 : 0;
     
+    let color: string;
     if (intensity < 35) {
-      return `bg-[hsl(var(--risk-low))]/${opacity}`;
+      color = `hsla(142, 76%, 36%, ${opacity})`; // green
     } else if (intensity < 65) {
-      return `bg-[hsl(var(--risk-moderate))]/${opacity}`;
+      color = `hsla(45, 93%, 47%, ${opacity})`; // yellow/amber
     } else {
-      return `bg-[hsl(var(--risk-elevated))]/${opacity}`;
+      color = `hsla(0, 84%, 60%, ${opacity})`; // red
     }
+    
+    return { backgroundColor: color };
   };
 
-  const getRiskLevel = (intensity: number): 'Low' | 'Moderate' | 'High' => {
+  const getRiskLevelLabel = (intensity: number): 'Low' | 'Moderate' | 'High' => {
     if (intensity < 35) return 'Low';
     if (intensity < 65) return 'Moderate';
     return 'High';
   };
 
-  const getRiskBadgeClass = (level: 'Low' | 'Moderate' | 'High') => {
+  const getLocalRiskBadgeClass = (level: 'Low' | 'Moderate' | 'High') => {
     switch (level) {
       case 'Low': return 'risk-badge-low';
       case 'Moderate': return 'risk-badge-moderate';
@@ -203,7 +212,7 @@ export const HeatmapGrid = ({
           {grid.flat().map((plot) => {
             const isSelected = isPlotSelected(plot);
             const isHovered = hoveredPlot?.id === plot.id;
-            const riskLevel = getRiskLevel(plot.exposureIntensity);
+            const riskLevel = getRiskLevelLabel(plot.exposureIntensity);
             
             const PlotButton = (
               <button
@@ -219,10 +228,10 @@ export const HeatmapGrid = ({
                 className={cn(
                   "w-full h-full rounded-sm transition-all duration-200 border border-white/10 touch-manipulation flex items-center justify-center",
                   activeTool === 'select' ? 'cursor-pointer' : 'cursor-default pointer-events-none',
-                  getRiskColor(plot.exposureIntensity, isSelected),
                   isSelected && "ring-2 ring-white ring-offset-1 ring-offset-transparent scale-[1.03] z-20 shadow-lg border-white/70",
-                  isHovered && !isSelected && "border-white/40 bg-white/15 scale-[1.02]"
+                  isHovered && !isSelected && "border-white/40 scale-[1.02]"
                 )}
+                style={getRiskColorRGBA(plot.exposureIntensity, isSelected)}
                 aria-label={`Plot ${plot.plotNumber} - ${riskLevel} Risk (${plot.exposureIntensity}%)`}
                 disabled={activeTool !== 'select'}
               >
@@ -250,7 +259,7 @@ export const HeatmapGrid = ({
                     <div className="flex items-center gap-2 mt-1">
                       <span className={cn(
                         "text-[10px] px-2 py-0.5 rounded font-medium",
-                        getRiskBadgeClass(riskLevel)
+                        getLocalRiskBadgeClass(riskLevel)
                       )}>
                         {riskLevel} Risk ({plot.exposureIntensity}%)
                       </span>
@@ -321,7 +330,23 @@ export const HeatmapGrid = ({
             </div>
           </div>
         </div>
+
+        {/* Heatmap Opacity Control */}
+        {showHeatmap && !isMobile && (
+          <HeatmapOpacityControl
+            opacity={heatmapOpacity}
+            onOpacityChange={setHeatmapOpacity}
+          />
+        )}
       </div>
+
+      {/* Polygon Risk Card - shows when polygon is drawn */}
+      {selectedPlots.length > 0 && !isMobile && (
+        <PolygonRiskCard 
+          selectedPlots={selectedPlots}
+          className="absolute top-20 left-2 md:top-24 md:left-4 z-30 max-w-xs"
+        />
+      )}
 
       {/* Zoom Controls */}
       <div className="absolute bottom-20 md:bottom-4 right-2 md:right-4 z-30 flex flex-col gap-1">
@@ -418,9 +443,9 @@ export const HeatmapGrid = ({
             {selectedPlot && (
               <span className={cn(
                 "text-xs px-2.5 py-1 rounded-md font-medium",
-                getRiskBadgeClass(getRiskLevel(selectedPlot.exposureIntensity))
+                getLocalRiskBadgeClass(getRiskLevelLabel(selectedPlot.exposureIntensity))
               )}>
-                {getRiskLevel(selectedPlot.exposureIntensity)}
+                {getRiskLevelLabel(selectedPlot.exposureIntensity)}
               </span>
             )}
           </div>
