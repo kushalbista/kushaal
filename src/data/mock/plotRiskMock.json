@@ -1,0 +1,32 @@
+{
+  "metadata": {
+    "source": "Mock data for development",
+    "dateRange": "2009-2019",
+    "location": "Gongabu, Ward 13, Kathmandu",
+    "version": "1.0"
+  },
+  "plots": [
+    {
+      "id": "GB-0101",
+      "flood_freq": 2,
+      "flood_risk": "low",
+      "elevation": 1313,
+      "last_flood_year": null
+    },
+    {
+      "id": "GB-0201",
+      "flood_freq": 4,
+      "flood_risk": "moderate",
+      "elevation": 1305,
+      "last_flood_year": 2019
+    },
+    {
+      "id": "GB-0301",
+      "flood_freq": 7,
+      "flood_risk": "high",
+      "elevation": 1298,
+      "last_flood_year": 2022
+    }
+  ],
+  "notes": "This mock data will be replaced with GeoJSON exported from Google Earth Engine"
+}
