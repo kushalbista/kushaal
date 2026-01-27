@@ -2,18 +2,14 @@ import { useState, useCallback, useMemo } from 'react';
 import { PlotData } from '@/data/mockData';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, ZoomIn, ZoomOut, Crosshair } from 'lucide-react';
+import { ZoomIn, ZoomOut, Crosshair } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MapToolbar, DrawingTool } from './MapToolbar';
 import { DrawingCanvas } from './DrawingCanvas';
 import { Button } from '@/components/ui/button';
-import { HeatmapOpacityControl } from '@/components/UI/HeatmapOpacityControl';
 import { PolygonRiskCard } from '@/components/UI/PolygonRiskCard';
 import gongabuSatellite from '@/assets/gongabu-satellite.jpg';
-import { getRiskLevel, getRiskBadgeClass } from '@/services/riskService';
-import { HEATMAP_DEFAULTS } from '@/utils/mapStyles';
+import { getRiskLevel } from '@/services/riskService';
 
 interface Point {
   x: number;
@@ -36,8 +32,6 @@ export const HeatmapGrid = ({
   onSelectMultiplePlots 
 }: HeatmapGridProps) => {
   const [hoveredPlot, setHoveredPlot] = useState<PlotData | null>(null);
-  const [showHeatmap, setShowHeatmap] = useState(true);
-  const [heatmapOpacity, setHeatmapOpacity] = useState(HEATMAP_DEFAULTS.opacity * 100);
   const [activeTool, setActiveTool] = useState<DrawingTool>('select');
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawnShape, setDrawnShape] = useState<Point[]>([]);
@@ -48,19 +42,17 @@ export const HeatmapGrid = ({
   const rows = grid.length;
   const cols = grid[0]?.length || 10;
 
-  // Get RGBA color for proper transparency blending with satellite
-  const getRiskColorRGBA = (intensity: number, isSelected: boolean): React.CSSProperties => {
-    if (!showHeatmap && !isSelected) return {};
-    
-    const opacity = isSelected ? 0.7 : showHeatmap ? heatmapOpacity / 100 : 0;
+  // Get color for plot based on selection state only
+  const getPlotStyle = (intensity: number, isSelected: boolean): React.CSSProperties => {
+    if (!isSelected) return {};
     
     let color: string;
     if (intensity < 35) {
-      color = `hsla(142, 76%, 36%, ${opacity})`; // green
+      color = `hsla(142, 76%, 36%, 0.6)`; // green
     } else if (intensity < 65) {
-      color = `hsla(45, 93%, 47%, ${opacity})`; // yellow/amber
+      color = `hsla(45, 93%, 47%, 0.6)`; // yellow/amber
     } else {
-      color = `hsla(0, 84%, 60%, ${opacity})`; // red
+      color = `hsla(0, 84%, 60%, 0.6)`; // red
     }
     
     return { backgroundColor: color };
@@ -103,7 +95,6 @@ export const HeatmapGrid = ({
     
     const flatGrid = grid.flat();
     return flatGrid.filter(plot => {
-      // Calculate plot center in percentage coordinates
       const plotCenterX = ((plot.gridX + 0.5) / cols) * 100;
       const plotCenterY = ((plot.gridY + 0.5) / rows) * 100;
       
@@ -165,15 +156,6 @@ export const HeatmapGrid = ({
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.25, 0.5));
   const handleResetZoom = () => setZoom(1);
 
-  // Compute risk statistics for legend
-  const riskStats = useMemo(() => {
-    const flatGrid = grid.flat();
-    const low = flatGrid.filter(p => p.exposureIntensity < 35).length;
-    const moderate = flatGrid.filter(p => p.exposureIntensity >= 35 && p.exposureIntensity < 65).length;
-    const high = flatGrid.filter(p => p.exposureIntensity >= 65).length;
-    return { low, moderate, high, total: flatGrid.length };
-  }, [grid]);
-
   const isPlotSelected = (plot: PlotData) => {
     return selectedPlot?.id === plot.id || selectedPlots.some(p => p.id === plot.id);
   };
@@ -194,11 +176,6 @@ export const HeatmapGrid = ({
           alt="Gongabu satellite view"
           className="absolute inset-0 w-full h-full object-cover"
         />
-
-        {/* Heatmap overlay when enabled */}
-        {showHeatmap && (
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/10" />
-        )}
 
         {/* Grid overlay */}
         <div 
@@ -229,10 +206,10 @@ export const HeatmapGrid = ({
                   "w-full h-full rounded-sm transition-all duration-200 border border-white/10 touch-manipulation flex items-center justify-center",
                   activeTool === 'select' ? 'cursor-pointer' : 'cursor-default pointer-events-none',
                   isSelected && "ring-2 ring-white ring-offset-1 ring-offset-transparent scale-[1.03] z-20 shadow-lg border-white/70",
-                  isHovered && !isSelected && "border-white/40 scale-[1.02]"
+                  isHovered && !isSelected && "border-white/40 scale-[1.02] bg-white/10"
                 )}
-                style={getRiskColorRGBA(plot.exposureIntensity, isSelected)}
-                aria-label={`Plot ${plot.plotNumber} - ${riskLevel} Risk (${plot.exposureIntensity}%)`}
+                style={getPlotStyle(plot.exposureIntensity, isSelected)}
+                aria-label={`Plot ${plot.plotNumber} - ${riskLevel} Exposure (${plot.exposureIntensity}%)`}
                 disabled={activeTool !== 'select'}
               >
                 {isSelected && (
@@ -261,14 +238,17 @@ export const HeatmapGrid = ({
                         "text-[10px] px-2 py-0.5 rounded font-medium",
                         getLocalRiskBadgeClass(riskLevel)
                       )}>
-                        {riskLevel} Risk ({plot.exposureIntensity}%)
+                        {riskLevel} Exposure ({plot.exposureIntensity}%)
                       </span>
                     </div>
                     <p className="text-[10px] text-muted-foreground/80 mt-1">
-                      Flood frequency: {plot.indicators.floodHistory.yearsAffected}/10 years
+                      Flood frequency: {plot.indicators.floodExposure.yearsAffected}/10 years
+                    </p>
+                    <p className="text-[10px] text-muted-foreground/80">
+                      Road distance: {plot.indicators.roadAccessibility.distanceMeters}m
                     </p>
                     <p className="text-[10px] text-muted-foreground/60 italic">
-                      Computed from historical data (2009–2019)
+                      Based on historical data (2009–2019)
                     </p>
                   </div>
                 </TooltipContent>
@@ -303,41 +283,12 @@ export const HeatmapGrid = ({
         />
       </div>
 
-      {/* Location Label & Heatmap Toggle */}
-      <div className="absolute top-2 right-2 md:top-4 md:right-4 z-30 flex flex-col gap-2">
+      {/* Location Label */}
+      <div className="absolute top-2 right-2 md:top-4 md:right-4 z-30">
         <div className="glass-strong rounded-lg px-3 py-2 md:px-4 md:py-2.5 shadow-lg">
           <p className="text-xs md:text-sm font-semibold text-foreground">Gongabu, Kathmandu</p>
           <p className="text-[10px] md:text-xs text-muted-foreground">27.7350°N, 85.3206°E</p>
         </div>
-
-        <div className="glass-strong rounded-lg p-2 md:p-3 shadow-lg">
-          <div className="flex items-center gap-2 md:gap-3">
-            {showHeatmap ? (
-              <Eye className="w-4 h-4 text-primary" />
-            ) : (
-              <EyeOff className="w-4 h-4 text-muted-foreground" />
-            )}
-            <div className="flex items-center gap-2">
-              <Switch
-                id="heatmap-toggle"
-                checked={showHeatmap}
-                onCheckedChange={setShowHeatmap}
-                className="scale-90 md:scale-100"
-              />
-              <Label htmlFor="heatmap-toggle" className="text-[10px] md:text-xs font-medium cursor-pointer whitespace-nowrap">
-                Heatmap
-              </Label>
-            </div>
-          </div>
-        </div>
-
-        {/* Heatmap Opacity Control */}
-        {showHeatmap && !isMobile && (
-          <HeatmapOpacityControl
-            opacity={heatmapOpacity}
-            onOpacityChange={setHeatmapOpacity}
-          />
-        )}
       </div>
 
       {/* Polygon Risk Card - shows when polygon is drawn */}
@@ -379,39 +330,6 @@ export const HeatmapGrid = ({
         </Button>
       </div>
 
-      {/* Legend - Always visible when heatmap is on */}
-      {showHeatmap && (
-        <div className="absolute bottom-20 md:bottom-4 left-2 md:left-4 glass-strong rounded-lg p-2 md:p-3 shadow-lg animate-fade-in z-30">
-          <p className="text-[10px] md:text-xs font-medium text-foreground mb-1.5 md:mb-2">Risk Levels (Flood/Waterlogging)</p>
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 md:w-4 md:h-4 rounded-sm bg-[hsl(var(--risk-low))]" />
-                <span className="text-[10px] md:text-xs text-muted-foreground">Low (&lt;35%)</span>
-              </div>
-              <span className="text-[10px] text-muted-foreground/70">{riskStats.low} plots</span>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 md:w-4 md:h-4 rounded-sm bg-[hsl(var(--risk-moderate))]" />
-                <span className="text-[10px] md:text-xs text-muted-foreground">Medium (35-65%)</span>
-              </div>
-              <span className="text-[10px] text-muted-foreground/70">{riskStats.moderate} plots</span>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 md:w-4 md:h-4 rounded-sm bg-[hsl(var(--risk-elevated))]" />
-                <span className="text-[10px] md:text-xs text-muted-foreground">High (&gt;65%)</span>
-              </div>
-              <span className="text-[10px] text-muted-foreground/70">{riskStats.high} plots</span>
-            </div>
-          </div>
-          <p className="text-[9px] text-muted-foreground/60 mt-2 italic">
-            Source: Historical data (2009–2019)
-          </p>
-        </div>
-      )}
-
       {/* Drawing instruction when using drawing tools */}
       {(activeTool === 'polygon' || activeTool === 'rectangle') && !isDrawing && (
         <div className="absolute bottom-20 md:bottom-16 left-1/2 -translate-x-1/2 glass-strong rounded-lg px-4 py-2 shadow-lg z-30 animate-pulse-soft">
@@ -442,7 +360,7 @@ export const HeatmapGrid = ({
           <div className="flex items-center gap-2">
             {selectedPlot && (
               <span className={cn(
-                "text-xs px-2.5 py-1 rounded-md font-medium",
+                "text-xs px-2 py-1 rounded font-medium",
                 getLocalRiskBadgeClass(getRiskLevelLabel(selectedPlot.exposureIntensity))
               )}>
                 {getRiskLevelLabel(selectedPlot.exposureIntensity)}
