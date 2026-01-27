@@ -14,7 +14,6 @@ import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { RiskIndicatorSection } from './RiskIndicatorSection';
 import { DetailedSummary } from './DetailedSummary';
-import { Viewer360 } from '@/components/Viewer360';
 
 interface IndicatorPanelProps {
   selectedPlot: PlotData | null;
@@ -64,7 +63,7 @@ export const IndicatorPanel = ({ selectedPlot, selectedPlots }: IndicatorPanelPr
           icon: <CheckCircle className="w-5 h-5 md:w-6 md:h-6" />,
           color: 'text-[hsl(var(--risk-low))]',
           cardClass: 'risk-card-low',
-          label: 'Low Risk',
+          label: 'Low Exposure',
           description: 'Minimal flood/waterlogging concerns'
         };
       case 'Moderate':
@@ -72,7 +71,7 @@ export const IndicatorPanel = ({ selectedPlot, selectedPlots }: IndicatorPanelPr
           icon: <AlertCircle className="w-5 h-5 md:w-6 md:h-6" />,
           color: 'text-[hsl(var(--risk-moderate))]',
           cardClass: 'risk-card-moderate',
-          label: 'Medium Risk',
+          label: 'Medium Exposure',
           description: 'Moderate historical flood events'
         };
       case 'Elevated':
@@ -80,7 +79,7 @@ export const IndicatorPanel = ({ selectedPlot, selectedPlots }: IndicatorPanelPr
           icon: <AlertTriangle className="w-5 h-5 md:w-6 md:h-6" />,
           color: 'text-[hsl(var(--risk-elevated))]',
           cardClass: 'risk-card-elevated',
-          label: 'High Risk',
+          label: 'High Exposure',
           description: 'Significant flood/waterlogging history'
         };
     }
@@ -111,7 +110,7 @@ export const IndicatorPanel = ({ selectedPlot, selectedPlots }: IndicatorPanelPr
           <div className="flex items-start justify-between">
             <div>
               <h2 className="text-lg md:text-xl font-bold text-foreground">
-                Risk Analysis
+                Environmental Analysis
               </h2>
               <p className="text-sm text-muted-foreground mt-0.5">
                 {isMultiSelect 
@@ -148,23 +147,18 @@ export const IndicatorPanel = ({ selectedPlot, selectedPlots }: IndicatorPanelPr
           isMultiSelect={isMultiSelect}
         />
 
-        {/* 360 View - Only for single plot */}
-        {displayPlot && !isMultiSelect && (
-          <Viewer360 plot={displayPlot} />
-        )}
-
-        {/* Multi-select notice for 360 view */}
-        {isMultiSelect && (
-          <div className="bg-secondary/50 rounded-lg p-3 text-center">
-            <p className="text-xs text-muted-foreground">
-              360° view available for single-plot selection only.
-            </p>
-          </div>
-        )}
-
         {/* Risk Indicators - for single plot */}
         {displayPlot && !isMultiSelect && (
           <RiskIndicatorSection indicators={displayPlot.indicators} />
+        )}
+
+        {/* Multi-select notice for detailed indicators */}
+        {isMultiSelect && (
+          <div className="bg-secondary/50 rounded-lg p-3 text-center">
+            <p className="text-xs text-muted-foreground">
+              Detailed indicators available for single-plot selection only.
+            </p>
+          </div>
         )}
 
         {/* Action Buttons */}
@@ -191,7 +185,7 @@ export const IndicatorPanel = ({ selectedPlot, selectedPlots }: IndicatorPanelPr
         {/* Disclaimer */}
         <div className="text-[10px] md:text-xs text-muted-foreground/70 text-center pt-3 border-t border-border">
           <p>Historical data analysis only. This is not a legal, financial, or official land assessment.</p>
-          <p className="mt-1">Data sources: Municipal records (2009-2019), satellite imagery, geological surveys.</p>
+          <p className="mt-1">Data sources: Satellite imagery (2009-2019), DEM data, regional soil maps.</p>
         </div>
       </div>
     </div>

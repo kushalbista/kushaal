@@ -26,9 +26,9 @@ export function getRiskLevel(intensity: number): RiskLevel {
 // Get display label for risk level
 export function getRiskLabel(level: RiskLevel): string {
   switch (level) {
-    case 'low': return 'Low Risk';
-    case 'moderate': return 'Moderate Risk';
-    case 'high': return 'High Risk';
+    case 'low': return 'Low Exposure';
+    case 'moderate': return 'Moderate Exposure';
+    case 'high': return 'High Exposure';
   }
 }
 
@@ -39,7 +39,7 @@ export function computeRiskAnalysis(plots: PlotData[]): RiskAnalysis | null {
   // Calculate averages
   const avgIntensity = plots.reduce((sum, p) => sum + p.exposureIntensity, 0) / plots.length;
   const avgElevation = plots.reduce((sum, p) => sum + p.indicators.elevation.plotElevation, 0) / plots.length;
-  const totalFloodYears = plots.reduce((sum, p) => sum + p.indicators.floodHistory.yearsAffected, 0);
+  const totalFloodYears = plots.reduce((sum, p) => sum + p.indicators.floodExposure.yearsAffected, 0);
   const avgFloodFreq = totalFloodYears / plots.length;
 
   // Estimate area (mock: 500 sq.m per plot)
@@ -112,7 +112,7 @@ export function computePolygonStats(plots: PlotData[]): PolygonRiskStats {
 
   const avgIntensity = plots.reduce((sum, p) => sum + p.exposureIntensity, 0) / plots.length;
   const avgElevation = plots.reduce((sum, p) => sum + p.indicators.elevation.plotElevation, 0) / plots.length;
-  const avgFloodYears = plots.reduce((sum, p) => sum + p.indicators.floodHistory.yearsAffected, 0) / plots.length;
+  const avgFloodYears = plots.reduce((sum, p) => sum + p.indicators.floodExposure.yearsAffected, 0) / plots.length;
 
   // Find dominant soil type
   const soilCounts: Record<string, number> = {};

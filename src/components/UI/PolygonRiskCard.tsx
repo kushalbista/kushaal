@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle, AlertCircle, TrendingUp, MapPin } from 'lucide-react';
+import { AlertTriangle, CheckCircle, AlertCircle, TrendingUp, MapPin, Car } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getRiskLevel, getRiskLabel, getRiskBadgeClass, computePolygonStats } from '@/services/riskService';
 import { DATA_SOURCE } from '@/utils/constants';
@@ -15,6 +15,9 @@ export const PolygonRiskCard = ({ selectedPlots, className }: PolygonRiskCardPro
   if (stats.plotCount === 0) {
     return null;
   }
+
+  // Calculate average road distance
+  const avgRoadDistance = selectedPlots.reduce((sum, p) => sum + p.indicators.roadAccessibility.distanceMeters, 0) / selectedPlots.length;
 
   const getRiskIcon = () => {
     switch (stats.riskLevel) {
@@ -35,7 +38,7 @@ export const PolygonRiskCard = ({ selectedPlots, className }: PolygonRiskCardPro
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Risk of Selected Area</h3>
+          <h3 className="text-sm font-semibold text-foreground">Exposure Analysis</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             {stats.plotCount} plot{stats.plotCount !== 1 ? 's' : ''} analyzed
           </p>
@@ -53,7 +56,7 @@ export const PolygonRiskCard = ({ selectedPlots, className }: PolygonRiskCardPro
         {getRiskIcon()}
         <div className="flex-1">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-muted-foreground">Flood Risk Score</span>
+            <span className="text-xs text-muted-foreground">Flood Exposure Score</span>
             <span className="text-sm font-bold text-foreground">{stats.riskScore}%</span>
           </div>
           <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
@@ -87,6 +90,15 @@ export const PolygonRiskCard = ({ selectedPlots, className }: PolygonRiskCardPro
           </div>
           <p className="text-sm font-semibold text-foreground">{stats.avgElevation}m</p>
         </div>
+      </div>
+
+      {/* Road Distance */}
+      <div className="p-2.5 bg-secondary/30 rounded-lg">
+        <div className="flex items-center gap-1.5 mb-1">
+          <Car className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-[10px] text-muted-foreground">Avg Road Distance</span>
+        </div>
+        <p className="text-sm font-semibold text-foreground">{Math.round(avgRoadDistance)}m</p>
       </div>
 
       {/* Soil Type */}

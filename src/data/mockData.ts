@@ -7,27 +7,44 @@ export interface PlotData {
   exposureLevel: 'low' | 'moderate' | 'elevated';
   exposureIntensity: number; // 0-100
   indicators: {
-    floodHistory: {
+    floodExposure: {
+      level: 'Low' | 'Medium' | 'High';
       yearsAffected: number;
       totalYears: number;
       lastFloodYear: number | null;
+      riverProximity: number; // meters
+      riverName: string;
+    };
+    drainageRisk: {
+      level: 'Low' | 'Medium' | 'High';
+      isLowLying: boolean;
+      isWaterConvergence: boolean;
+      flowAccumulation: 'Minimal' | 'Moderate' | 'Significant';
+    };
+    terrainSlope: {
+      category: 'Flat' | 'Moderate' | 'Steep';
+      slopePercent: number;
+      aspect: string;
     };
     elevation: {
       plotElevation: number;
       wardAverage: number;
       difference: number;
+      relativePosition: 'Lower' | 'Similar' | 'Higher';
     };
-    drainageProximity: {
+    roadAccessibility: {
       distanceMeters: number;
-      drainageType: string;
+      accessLevel: 'Good' | 'Moderate' | 'Limited';
+      nearestRoad: string;
+    };
+    surroundingLandUse: {
+      dominant: string;
+      categories: string[];
     };
     soilType: {
       type: string;
-      permeability: 'low' | 'medium' | 'high';
-    };
-    waterTable: {
-      depthMeters: number;
-      seasonalVariation: string;
+      category: 'Alluvial' | 'Clay-Dominant' | 'Sandy-Loam' | 'Mixed';
+      disclaimer: string;
     };
   };
   contextualInfo: string[];
@@ -79,6 +96,26 @@ const contextualInfoOptions = [
   "Improved stormwater management installed",
 ];
 
+const landUseOptions = [
+  'Settlement',
+  'Agriculture',
+  'River',
+  'Open Land',
+  'Commercial',
+  'Industrial',
+  'Green Space',
+  'Mixed Use'
+];
+
+const roadNames = [
+  'Ring Road',
+  'Tokha Road',
+  'Samakhusi Road',
+  'Basundhara Road',
+  'Gongabu Main Road',
+  'Local Access Road'
+];
+
 // Generate mock heatmap grid data for Gongabu area
 export const generateHeatmapGrid = (): PlotData[][] => {
   const gridRows = 8;
@@ -90,25 +127,19 @@ export const generateHeatmapGrid = (): PlotData[][] => {
   const baseLng = 85.3150;
   
   // Create exposure pattern based on typical Gongabu topography
-  // Higher exposure near the center-bottom (lower elevation, near drainage)
   const getExposurePattern = (x: number, y: number): number => {
-    // Simulate lower areas having higher exposure
     const centerX = gridCols / 2;
-    const bottomBias = (y / gridRows) * 30; // Bottom has higher base exposure
+    const bottomBias = (y / gridRows) * 30;
     const centerProximity = Math.abs(x - centerX) / centerX;
-    
-    // Random variation
     const randomFactor = Math.random() * 40;
-    
-    // Combine factors
     return Math.min(100, Math.max(0, bottomBias + (1 - centerProximity) * 25 + randomFactor));
   };
 
   const soilTypes = [
-    { type: 'Alluvial', permeability: 'medium' as const },
-    { type: 'Sandy Loam', permeability: 'high' as const },
-    { type: 'Clay', permeability: 'low' as const },
-    { type: 'Silty Clay', permeability: 'low' as const },
+    { type: 'Alluvial Deposit', category: 'Alluvial' as const },
+    { type: 'Sandy Loam', category: 'Sandy-Loam' as const },
+    { type: 'Clay-Rich Soil', category: 'Clay-Dominant' as const },
+    { type: 'Mixed Sediment', category: 'Mixed' as const },
   ];
 
   for (let y = 0; y < gridRows; y++) {
@@ -120,8 +151,28 @@ export const generateHeatmapGrid = (): PlotData[][] => {
       const yearsAffected = Math.floor(intensity / 18);
       const plotElevation = 1310 - (y * 3) + (Math.random() * 10 - 5);
       const wardAverage = 1300;
+      const elevDiff = Math.round(plotElevation - wardAverage);
       const soil = soilTypes[Math.floor(Math.random() * soilTypes.length)];
+      
+      // River proximity - closer to bottom = closer to river
+      const riverProximity = Math.round(500 - (y * 40) + (Math.random() * 100));
+      
+      // Road distance
+      const roadDistance = Math.round(50 + Math.random() * 400);
+      
+      // Slope calculation
+      const slopePercent = Math.round(Math.random() * 15);
+      
+      // Determine levels based on data
+      const floodLevel: 'Low' | 'Medium' | 'High' = yearsAffected < 2 ? 'Low' : yearsAffected < 4 ? 'Medium' : 'High';
+      const drainageLevel: 'Low' | 'Medium' | 'High' = intensity < 35 ? 'Low' : intensity < 65 ? 'Medium' : 'High';
+      const accessLevel: 'Good' | 'Moderate' | 'Limited' = roadDistance < 100 ? 'Good' : roadDistance < 250 ? 'Moderate' : 'Limited';
+      const slopeCategory: 'Flat' | 'Moderate' | 'Steep' = slopePercent < 5 ? 'Flat' : slopePercent < 10 ? 'Moderate' : 'Steep';
+      const relativePosition: 'Lower' | 'Similar' | 'Higher' = elevDiff < -5 ? 'Lower' : elevDiff > 5 ? 'Higher' : 'Similar';
 
+      // Random land use
+      const shuffledLandUse = [...landUseOptions].sort(() => Math.random() - 0.5);
+      
       row.push({
         id: `gongabu-${x}-${y}`,
         gridX: x,
@@ -129,25 +180,45 @@ export const generateHeatmapGrid = (): PlotData[][] => {
         exposureLevel,
         exposureIntensity: Math.round(intensity),
         indicators: {
-          floodHistory: {
+          floodExposure: {
+            level: floodLevel,
             yearsAffected,
             totalYears: 10,
             lastFloodYear: yearsAffected > 0 ? 2019 + Math.floor(Math.random() * 5) : null,
+            riverProximity: Math.max(50, riverProximity),
+            riverName: 'Bishnumati River'
+          },
+          drainageRisk: {
+            level: drainageLevel,
+            isLowLying: elevDiff < -3,
+            isWaterConvergence: intensity > 50 && slopePercent < 5,
+            flowAccumulation: intensity < 35 ? 'Minimal' : intensity < 65 ? 'Moderate' : 'Significant'
+          },
+          terrainSlope: {
+            category: slopeCategory,
+            slopePercent,
+            aspect: ['North', 'South', 'East', 'West', 'Northeast', 'Southeast'][Math.floor(Math.random() * 6)]
           },
           elevation: {
             plotElevation: Math.round(plotElevation),
             wardAverage,
-            difference: Math.round(plotElevation - wardAverage),
+            difference: elevDiff,
+            relativePosition
           },
-          drainageProximity: {
-            distanceMeters: Math.round(30 + Math.random() * 400),
-            drainageType: y > gridRows / 2 ? 'Bishnumati Tributary' : 'Municipal Drain',
+          roadAccessibility: {
+            distanceMeters: roadDistance,
+            accessLevel,
+            nearestRoad: roadNames[Math.floor(Math.random() * roadNames.length)]
           },
-          soilType: soil,
-          waterTable: {
-            depthMeters: Math.round(3 + Math.random() * 8),
-            seasonalVariation: intensity > 50 ? 'High (1-2m)' : 'Moderate (0.5-1m)',
+          surroundingLandUse: {
+            dominant: shuffledLandUse[0],
+            categories: shuffledLandUse.slice(0, 3)
           },
+          soilType: {
+            type: soil.type,
+            category: soil.category,
+            disclaimer: 'Indicative only, derived from regional soil maps. Not soil bearing capacity or construction suitability.'
+          }
         },
         contextualInfo: contextualInfoOptions
           .sort(() => Math.random() - 0.5)

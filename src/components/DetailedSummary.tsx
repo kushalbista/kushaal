@@ -4,7 +4,9 @@ import {
   TriangleAlert, 
   TrendingUp,
   Calendar,
-  Info
+  Info,
+  Car,
+  Mountain
 } from 'lucide-react';
 import { PlotData } from '@/data/mockData';
 import { cn } from '@/lib/utils';
@@ -27,28 +29,34 @@ export const DetailedSummary = ({ selectedPlots, isMultiSelect = false }: Detail
   const avgIntensity = selectedPlots.reduce((sum, p) => sum + p.exposureIntensity, 0) / selectedPlots.length;
   
   // Flood frequency calculation from historical data
-  const totalFloodYears = selectedPlots.reduce((sum, p) => sum + p.indicators.floodHistory.yearsAffected, 0);
+  const totalFloodYears = selectedPlots.reduce((sum, p) => sum + p.indicators.floodExposure.yearsAffected, 0);
   const avgFloodFrequency = totalFloodYears / selectedPlots.length;
-  const floodPercentage = (avgFloodFrequency / 10) * 100; // Based on 10-year history
+  const floodPercentage = (avgFloodFrequency / 10) * 100;
+
+  // Road distance calculation
+  const avgRoadDistance = selectedPlots.reduce((sum, p) => sum + p.indicators.roadAccessibility.distanceMeters, 0) / selectedPlots.length;
+
+  // River proximity
+  const avgRiverProximity = selectedPlots.reduce((sum, p) => sum + p.indicators.floodExposure.riverProximity, 0) / selectedPlots.length;
 
   const getRiskClassification = (intensity: number): { label: string; class: string; description: string } => {
     if (intensity < 35) {
       return {
-        label: 'Low Risk',
+        label: 'Low Exposure',
         class: 'risk-badge-low',
-        description: 'Minimal flood/waterlogging history. Safe for standard construction.'
+        description: 'Minimal flood/waterlogging history. Standard construction practices generally suitable.'
       };
     } else if (intensity < 65) {
       return {
-        label: 'Medium Risk',
+        label: 'Medium Exposure',
         class: 'risk-badge-moderate',
         description: 'Moderate flood events recorded. Consider elevated foundation design.'
       };
     } else {
       return {
-        label: 'High Risk',
+        label: 'High Exposure',
         class: 'risk-badge-elevated',
-        description: 'Significant flood/waterlogging history. Special mitigation required.'
+        description: 'Significant flood/waterlogging history. Special mitigation may be required.'
       };
     }
   };
@@ -125,7 +133,7 @@ export const DetailedSummary = ({ selectedPlots, isMultiSelect = false }: Detail
           tooltip="Estimated area based on grid cell dimensions. Actual survey measurements may vary."
         />
         <DataRow 
-          icon={MapPin} 
+          icon={Mountain} 
           label="Elevation" 
           value={`${Math.round(avgElevation)}m`}
           tooltip="Average elevation across selected plots. Source: Digital Elevation Model (DEM) data."
@@ -134,21 +142,33 @@ export const DetailedSummary = ({ selectedPlots, isMultiSelect = false }: Detail
           icon={Calendar} 
           label="Flood Frequency" 
           value={`${avgFloodFrequency.toFixed(1)}/10 years`}
-          tooltip="Computed from historical flood and water-logging data (2009–2019). Based on satellite imagery and municipal records."
+          tooltip="Computed from historical satellite-detected flood data (2009–2019)."
+        />
+        <DataRow 
+          icon={MapPin} 
+          label="River Proximity" 
+          value={`${Math.round(avgRiverProximity)}m`}
+          tooltip="Distance to nearest major river (Bishnumati River)."
+        />
+        <DataRow 
+          icon={Car} 
+          label="Main Road Distance" 
+          value={`${Math.round(avgRoadDistance)}m`}
+          tooltip="Distance to nearest main road. Affects accessibility and emergency response."
         />
         <DataRow 
           icon={TrendingUp} 
-          label="Risk Score" 
+          label="Exposure Score" 
           value={`${Math.round(avgIntensity)}%`}
-          tooltip="Composite risk score derived from flood history, drainage proximity, soil permeability, and elevation factors."
+          tooltip="Composite score derived from flood history, drainage patterns, and elevation factors."
         />
       </div>
 
       {/* Data Source Note */}
       <div className="bg-info/10 rounded-lg p-3 border border-info/20">
         <p className="text-[11px] text-info leading-relaxed">
-          <strong>Data Source:</strong> Risk calculated using historical flood and water-logging data from 2009–2019. 
-          Sources include municipal records, satellite imagery analysis, and geological surveys.
+          <strong>Data Source:</strong> Analysis based on historical satellite flood detection and DEM data from 2009–2019. 
+          Sources include satellite imagery analysis and municipal records.
         </p>
       </div>
     </div>
