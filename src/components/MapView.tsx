@@ -176,19 +176,19 @@ export const MapView = ({
       setMapLoaded(true);
     });
 
-    // Click handler for flood zone detection
-    map.current.on('click', (e) => {
-      if (!map.current) return;
-
-      const features = map.current.queryRenderedFeatures(e.point, {
-        layers: ['flood-polygons-fill']
-      });
-
-      if (features.length > 0) {
-        const feature = features[0];
+    // Click handler specifically for flood layer - High Risk
+    map.current.on('click', 'flood-polygons-fill', (e) => {
+      if (!map.current || !e.features || e.features.length === 0) return;
+      
+      const feature = e.features[0];
+      const properties = feature.properties || {};
+      
+      // Use total_impact_ha from GeoJSON if available, otherwise calculate
+      let areaM2 = 0;
+      if (properties.total_impact_ha) {
+        areaM2 = Number(properties.total_impact_ha) * 10000; // Convert ha to m²
+      } else {
         const geometry = feature.geometry as GeoJSON.Polygon | GeoJSON.MultiPolygon;
-        
-        let areaM2 = 0;
         if (geometry.type === 'Polygon') {
           areaM2 = calculatePolygonArea(geometry.coordinates);
         } else if (geometry.type === 'MultiPolygon') {
@@ -196,15 +196,26 @@ export const MapView = ({
             return total + calculatePolygonArea(poly);
           }, 0);
         }
+      }
 
-        onFeatureClick({
-          isInFloodZone: true,
-          properties: feature.properties || {},
-          areaM2,
-          coordinates: [e.lngLat.lng, e.lngLat.lat]
-        });
-      } else {
-        // Check if click is within study area
+      onFeatureClick({
+        isInFloodZone: true,
+        properties,
+        areaM2,
+        coordinates: [e.lngLat.lng, e.lngLat.lat]
+      });
+    });
+
+    // Click handler for areas outside flood polygons - Safe Zone
+    map.current.on('click', (e) => {
+      if (!map.current) return;
+
+      const features = map.current.queryRenderedFeatures(e.point, {
+        layers: ['flood-polygons-fill']
+      });
+
+      // Only trigger if NOT clicking on a flood polygon
+      if (features.length === 0) {
         const lng = e.lngLat.lng;
         const lat = e.lngLat.lat;
         const inStudyArea = lng >= 87.002 && lng <= 87.311 && lat >= 26.634 && lat <= 26.804;
