@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { TopBar } from '@/components/TopBar';
-import { MapView } from '@/components/MapView';
+import { HeatmapGrid } from '@/components/HeatmapGrid';
 import { IndicatorPanel } from '@/components/IndicatorPanel';
 import { Footer } from '@/components/Footer';
 import { generateHeatmapGrid, PlotData, SearchResult } from '@/data/mockData';
@@ -12,13 +12,11 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { ClickedFeature } from '@/types/mapTypes';
 
 const Index = () => {
   const grid = useMemo(() => generateHeatmapGrid(), []);
   const [selectedPlot, setSelectedPlot] = useState<PlotData | null>(null);
   const [selectedPlots, setSelectedPlots] = useState<PlotData[]>([]);
-  const [clickedFeature, setClickedFeature] = useState<ClickedFeature | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isMobile = useIsMobile();
 
@@ -72,28 +70,9 @@ const Index = () => {
   const handleAnalyzeNew = () => {
     setSelectedPlot(null);
     setSelectedPlots([]);
-    setClickedFeature(null);
     setDrawerOpen(false);
-    toast.info('Click on the map to analyze flood risk for any location.');
+    toast.info('Draw a custom area on the map or click a plot to analyze.');
   };
-
-  const handleFeatureClick = useCallback((feature: ClickedFeature | null) => {
-    setClickedFeature(feature);
-    if (feature) {
-      if (isMobile) {
-        setDrawerOpen(true);
-      }
-      if (feature.isInFloodZone) {
-        toast.warning('Flood Zone Detected', {
-          description: 'This area has been affected by flooding.',
-        });
-      } else {
-        toast.success('Safe Zone', {
-          description: 'No flood detected in this area.',
-        });
-      }
-    }
-  }, [isMobile]);
 
   // Determine which plots to show in the panel
   const plotsForAnalysis = selectedPlots.length > 0 ? selectedPlots : selectedPlot ? [selectedPlot] : [];
@@ -105,12 +84,12 @@ const Index = () => {
       <main className="flex-1 flex flex-col lg:flex-row overflow-hidden relative min-h-0">
         {/* Map Panel - Full screen on mobile */}
         <div className="flex-1 w-full lg:w-[60%] xl:w-[65%] relative min-h-[50vh] lg:min-h-0">
-          <MapView 
-            selectedPlot={selectedPlot}
+          <HeatmapGrid 
+            grid={grid} 
+            selectedPlot={selectedPlot} 
             selectedPlots={selectedPlots}
             onSelectPlot={handleSelectPlot}
             onSelectMultiplePlots={handleSelectMultiplePlots}
-            onFeatureClick={handleFeatureClick}
           />
         </div>
 
@@ -119,7 +98,6 @@ const Index = () => {
           <IndicatorPanel 
             selectedPlot={selectedPlot} 
             selectedPlots={plotsForAnalysis}
-            clickedFeature={clickedFeature}
           />
         </div>
 
@@ -140,7 +118,6 @@ const Index = () => {
                 <IndicatorPanel 
                   selectedPlot={selectedPlot}
                   selectedPlots={plotsForAnalysis}
-                  clickedFeature={clickedFeature}
                 />
               </div>
             </DrawerContent>
