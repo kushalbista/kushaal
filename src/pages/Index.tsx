@@ -1,9 +1,8 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { TopBar } from '@/components/TopBar';
 import { MapView } from '@/components/MapView';
-import { IndicatorPanel } from '@/components/IndicatorPanel';
+import { AnalysisPanel } from '@/components/AnalysisPanel';
 import { Footer } from '@/components/Footer';
-import { generateHeatmapGrid, PlotData, SearchResult } from '@/data/mockData';
 import { toast } from 'sonner';
 import {
   Drawer,
@@ -12,135 +11,89 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { ClickedFeature } from '@/types/mapTypes';
+import { DrawnPolygon } from '@/types/mapTypes';
+import { analyzePlot, AnalysisResponse } from '@/services/analysisService';
 
 const Index = () => {
-  const grid = useMemo(() => generateHeatmapGrid(), []);
-  const [selectedPlot, setSelectedPlot] = useState<PlotData | null>(null);
-  const [selectedPlots, setSelectedPlots] = useState<PlotData[]>([]);
-  const [clickedFeature, setClickedFeature] = useState<ClickedFeature | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  // Open drawer when a plot is selected on mobile
-  useEffect(() => {
-    if (isMobile && (selectedPlot || selectedPlots.length > 0)) {
-      setDrawerOpen(true);
-    }
-  }, [selectedPlot, selectedPlots, isMobile]);
+  const handleAnalyze = useCallback(async (geometry: DrawnPolygon) => {
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+    setAnalysis(null);
 
-  const handleSearch = (result: SearchResult) => {
-    const flatGrid = grid.flat();
-    const nearestPlot = flatGrid.reduce((nearest, plot) => {
-      const distance = Math.sqrt(
-        Math.pow(plot.coordinates.lat - result.coordinates.lat, 2) +
-        Math.pow(plot.coordinates.lng - result.coordinates.lng, 2)
-      );
-      const nearestDistance = Math.sqrt(
-        Math.pow(nearest.coordinates.lat - result.coordinates.lat, 2) +
-        Math.pow(nearest.coordinates.lng - result.coordinates.lng, 2)
-      );
-      return distance < nearestDistance ? plot : nearest;
-    }, flatGrid[0]);
+    if (isMobile) setDrawerOpen(true);
 
-    setSelectedPlot(nearestPlot);
-    setSelectedPlots([]);
-    toast.success(`Navigated to ${result.name}`, {
-      description: 'Plot selected. View analysis in the panel.',
-    });
-  };
-
-  const handleSelectPlot = (plot: PlotData) => {
-    setSelectedPlot(plot);
-    setSelectedPlots([]);
-  };
-
-  const handleSelectMultiplePlots = (plots: PlotData[]) => {
-    setSelectedPlots(plots);
-    if (plots.length === 1) {
-      setSelectedPlot(plots[0]);
-    } else if (plots.length > 1) {
-      setSelectedPlot(null);
-    }
-    if (plots.length > 0) {
-      toast.success(`${plots.length} plot${plots.length > 1 ? 's' : ''} selected`, {
-        description: 'View combined analysis in the panel.',
+    try {
+      const result = await analyzePlot(geometry);
+      setAnalysis(result);
+      toast.success('Analysis complete', {
+        description: 'GEE data processed successfully.',
       });
-    }
-  };
-
-  const handleAnalyzeNew = () => {
-    setSelectedPlot(null);
-    setSelectedPlots([]);
-    setClickedFeature(null);
-    setDrawerOpen(false);
-    toast.info('Click on the map to analyze flood risk for any location.');
-  };
-
-  const handleFeatureClick = useCallback((feature: ClickedFeature | null) => {
-    setClickedFeature(feature);
-    if (feature) {
-      if (isMobile) {
-        setDrawerOpen(true);
-      }
-      if (feature.isInFloodZone) {
-        toast.warning('Flood Zone Detected', {
-          description: 'This area has been affected by flooding.',
-        });
-      } else {
-        toast.success('Safe Zone', {
-          description: 'No flood detected in this area.',
-        });
-      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Analysis failed';
+      setAnalysisError(msg);
+      toast.error('Please draw a plot within the Sunsari study area.', {
+        description: msg,
+      });
+    } finally {
+      setIsAnalyzing(false);
     }
   }, [isMobile]);
 
-  // Determine which plots to show in the panel
-  const plotsForAnalysis = selectedPlots.length > 0 ? selectedPlots : selectedPlot ? [selectedPlot] : [];
+  const handleClearAnalysis = useCallback(() => {
+    setAnalysis(null);
+    setAnalysisError(null);
+    setDrawerOpen(false);
+  }, []);
+
+  const handleAnalyzeNew = () => {
+    handleClearAnalysis();
+    toast.info('Draw a polygon on the map to analyze a new plot.');
+  };
 
   return (
     <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
-      <TopBar onSearch={handleSearch} onAnalyzeNew={handleAnalyzeNew} />
-      
+      <TopBar onSearch={() => {}} onAnalyzeNew={handleAnalyzeNew} />
+
       <main className="flex-1 flex flex-col lg:flex-row overflow-hidden relative min-h-0">
-        {/* Map Panel - Full screen on mobile */}
+        {/* Map Panel */}
         <div className="flex-1 w-full lg:w-[60%] xl:w-[65%] relative min-h-[50vh] lg:min-h-0">
-          <MapView 
-            selectedPlot={selectedPlot}
-            selectedPlots={selectedPlots}
-            onSelectPlot={handleSelectPlot}
-            onSelectMultiplePlots={handleSelectMultiplePlots}
-            onFeatureClick={handleFeatureClick}
+          <MapView
+            onAnalyze={handleAnalyze}
+            isAnalyzing={isAnalyzing}
+            onClearAnalysis={handleClearAnalysis}
+            hasAnalysis={analysis !== null}
           />
         </div>
 
         {/* Desktop: Side Panel */}
         <div className="hidden lg:flex lg:flex-col lg:w-[40%] xl:w-[35%] border-l border-border bg-card overflow-hidden">
-          <IndicatorPanel 
-            selectedPlot={selectedPlot} 
-            selectedPlots={plotsForAnalysis}
-            clickedFeature={clickedFeature}
+          <AnalysisPanel
+            analysis={analysis}
+            isLoading={isAnalyzing}
+            error={analysisError}
           />
         </div>
 
-        {/* Mobile: Bottom Sheet Drawer */}
+        {/* Mobile: Bottom Sheet */}
         {isMobile && (
           <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
             <DrawerContent className="max-h-[85dvh]">
               <DrawerHeader className="pb-0 border-b border-border">
                 <DrawerTitle className="text-left">
-                  {selectedPlots.length > 1 
-                    ? `${selectedPlots.length} Plots Selected`
-                    : selectedPlot 
-                      ? `Plot ${selectedPlot.plotNumber} Analysis` 
-                      : 'Select a Plot'}
+                  {isAnalyzing ? 'Analyzing...' : analysis ? 'Analysis Results' : 'Draw a Plot'}
                 </DrawerTitle>
               </DrawerHeader>
               <div className="overflow-y-auto flex-1">
-                <IndicatorPanel 
-                  selectedPlot={selectedPlot}
-                  selectedPlots={plotsForAnalysis}
-                  clickedFeature={clickedFeature}
+                <AnalysisPanel
+                  analysis={analysis}
+                  isLoading={isAnalyzing}
+                  error={analysisError}
                 />
               </div>
             </DrawerContent>
@@ -148,7 +101,6 @@ const Index = () => {
         )}
       </main>
 
-      {/* Footer - hidden on mobile */}
       <div className="hidden lg:block">
         <Footer />
       </div>
