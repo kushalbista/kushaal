@@ -24,7 +24,6 @@ const Index = () => {
   const handleAnalyze = useCallback(async (geometry: DrawnPolygon) => {
     setIsAnalyzing(true);
     setAnalysisError(null);
-    setAnalysis(null);
 
     if (isMobile) setDrawerOpen(true);
 
@@ -68,6 +67,7 @@ const Index = () => {
             isAnalyzing={isAnalyzing}
             onClearAnalysis={handleClearAnalysis}
             hasAnalysis={analysis !== null}
+            analysisComplete={analysis !== null && !isAnalyzing}
           />
         </div>
 

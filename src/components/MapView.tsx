@@ -35,9 +35,10 @@ interface MapViewProps {
   isAnalyzing: boolean;
   onClearAnalysis: () => void;
   hasAnalysis: boolean;
+  analysisComplete?: boolean;
 }
 
-export const MapView = ({ onAnalyze, isAnalyzing, onClearAnalysis, hasAnalysis }: MapViewProps) => {
+export const MapView = ({ onAnalyze, isAnalyzing, onClearAnalysis, hasAnalysis, analysisComplete }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -131,7 +132,7 @@ export const MapView = ({ onAnalyze, isAnalyzing, onClearAnalysis, hasAnalysis }
         id: 'draw-polygon-fill',
         type: 'fill',
         source: 'draw-polygon',
-        paint: { 'fill-color': '#facc15', 'fill-opacity': 0.25 }
+        paint: { 'fill-color': '#facc15', 'fill-opacity': 0.2 }
       });
 
       map.current.addLayer({
@@ -155,6 +156,23 @@ export const MapView = ({ onAnalyze, isAnalyzing, onClearAnalysis, hasAnalysis }
           'circle-color': '#facc15',
           'circle-stroke-color': '#000',
           'circle-stroke-width': 1.5
+        }
+      });
+
+      // Boundary path layer (dashed blue line)
+      map.current.addSource('boundary-path', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
+
+      map.current.addLayer({
+        id: 'boundary-path-line',
+        type: 'line',
+        source: 'boundary-path',
+        paint: {
+          'line-color': '#3b82f6',
+          'line-width': 3,
+          'line-dasharray': [2, 2]
         }
       });
 
@@ -257,18 +275,24 @@ export const MapView = ({ onAnalyze, isAnalyzing, onClearAnalysis, hasAnalysis }
     setDrawnPoints([]);
     setIsDrawing(true);
     onClearAnalysis();
+    // Clear boundary path when starting new drawing
+    if (map.current && mapLoaded) {
+      const pathSource = map.current.getSource('boundary-path') as maplibregl.GeoJSONSource;
+      pathSource?.setData({ type: 'FeatureCollection', features: [] });
+    }
   };
 
   const clearDrawing = () => {
     setDrawnPoints([]);
     setIsDrawing(false);
     onClearAnalysis();
-    // Clear map layers
     if (map.current && mapLoaded) {
       const pointsSource = map.current.getSource('draw-points') as maplibregl.GeoJSONSource;
       const polySource = map.current.getSource('draw-polygon') as maplibregl.GeoJSONSource;
+      const pathSource = map.current.getSource('boundary-path') as maplibregl.GeoJSONSource;
       pointsSource?.setData({ type: 'FeatureCollection', features: [] });
       polySource?.setData({ type: 'FeatureCollection', features: [] });
+      pathSource?.setData({ type: 'FeatureCollection', features: [] });
     }
   };
 
@@ -278,7 +302,6 @@ export const MapView = ({ onAnalyze, isAnalyzing, onClearAnalysis, hasAnalysis }
       return;
     }
 
-    // Check bounds
     if (!isWithinStudyArea(drawnPoints)) {
       toast.error('Please draw a plot within the Sunsari study area.');
       return;
@@ -289,8 +312,54 @@ export const MapView = ({ onAnalyze, isAnalyzing, onClearAnalysis, hasAnalysis }
       coordinates: [[...drawnPoints, drawnPoints[0]]]
     };
 
+    // Add boundary path (dashed blue line showing vertex sequence)
+    if (map.current && mapLoaded) {
+      const pathSource = map.current.getSource('boundary-path') as maplibregl.GeoJSONSource;
+      if (pathSource) {
+        pathSource.setData({
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: [...drawnPoints, drawnPoints[0]]
+          }
+        });
+      }
+    }
+
+    // Keep polygon visible - don't clear it
+    setIsDrawing(false);
     onAnalyze(geometry);
   };
+
+  // Cinematic zoom on analysis complete
+  useEffect(() => {
+    if (!map.current || !mapLoaded || !analysisComplete || drawnPoints.length < 3) return;
+
+    const lngs = drawnPoints.map(p => p[0]);
+    const lats = drawnPoints.map(p => p[1]);
+    const bounds: [[number, number], [number, number]] = [
+      [Math.min(...lngs), Math.min(...lats)],
+      [Math.max(...lngs), Math.max(...lats)]
+    ];
+
+    map.current.fitBounds(bounds, {
+      padding: 50,
+      duration: 1000
+    });
+
+    // Animate dash array for boundary path
+    let step = 0;
+    const dashAnimation = setInterval(() => {
+      if (!map.current) { clearInterval(dashAnimation); return; }
+      step = (step + 1) % 4;
+      map.current.setPaintProperty('boundary-path-line', 'line-dasharray', [
+        2 + step * 0.5, 2 - step * 0.25
+      ]);
+    }, 200);
+
+    return () => clearInterval(dashAnimation);
+  }, [analysisComplete, drawnPoints, mapLoaded]);
 
   const hasPolygon = drawnPoints.length >= 3 && !isDrawing;
 
